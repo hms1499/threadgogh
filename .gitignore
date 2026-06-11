@@ -2,8 +2,8 @@
 node_modules/
 
 # Next.js
-web/.next/
-web/out/
+frontend/.next/
+frontend/out/
 
 # Clarinet
 contracts/.cache/

@@ -24,7 +24,7 @@ threadpay/
 │   │   └── thread-pay.clar             # contract chính
 │   └── tests/
 │       └── thread-pay.test.ts          # Clarinet simnet tests (vitest)
-└── web/                                # Next.js app
+└── frontend/                                # Next.js app
     ├── .env.example
     ├── vitest.config.ts
     └── src/
@@ -64,7 +64,7 @@ threadpay/
 ### Task 1: Scaffold Clarinet project + Next.js app
 
 **Files:**
-- Create: `contracts/` (clarinet new), `web/` (create-next-app), `.gitignore`
+- Create: `contracts/` (clarinet new), `frontend/` (create-next-app), `.gitignore`
 
 - [ ] **Step 1: Tạo Clarinet project**
 
@@ -89,17 +89,17 @@ rm -f contracts/tests/traits.test.ts contracts/tests/mock-sbtc.test.ts
 
 ```bash
 cd ~/Desktop/threadpay
-npx create-next-app@latest web --typescript --app --tailwind --eslint --src-dir --use-npm --no-import-alias --yes
-cd web
+npx create-next-app@latest frontend --typescript --app --tailwind --eslint --src-dir --use-npm --no-import-alias --yes
+cd frontend
 npm i @stacks/connect @stacks/transactions @supabase/supabase-js @anthropic-ai/sdk
 npm i -D vitest
 ```
 
-- [ ] **Step 4: Thêm script test vào `web/package.json`**
+- [ ] **Step 4: Thêm script test vào `frontend/package.json`**
 
 Trong `"scripts"` thêm: `"test": "vitest run"`.
 
-- [ ] **Step 5: Tạo `web/vitest.config.ts`**
+- [ ] **Step 5: Tạo `frontend/vitest.config.ts`**
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -520,9 +520,9 @@ git add -A && git commit -m "chore(contracts): testnet deployment plan"
 ### Task 6: Supabase schema + config + clients
 
 **Files:**
-- Create: `web/src/lib/config.ts`
-- Create: `web/src/lib/supabase.ts`
-- Create: `web/.env.example`, `web/.env.local` (không commit)
+- Create: `frontend/src/lib/config.ts`
+- Create: `frontend/src/lib/supabase.ts`
+- Create: `frontend/.env.example`, `frontend/.env.local` (không commit)
 
 - [ ] **Step 1: Tạo Supabase project** (supabase.com → New project, free tier). Trong SQL Editor chạy:
 
@@ -554,7 +554,7 @@ create table generations (
 create index generations_payer_idx on generations(payer_address);
 ```
 
-- [ ] **Step 2: Viết `web/.env.example`**
+- [ ] **Step 2: Viết `frontend/.env.example`**
 
 ```bash
 # Server-only
@@ -570,9 +570,9 @@ NEXT_PUBLIC_SBTC_CONTRACT=ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token
 NEXT_PUBLIC_HIRO_API=https://api.testnet.hiro.so
 ```
 
-Copy thành `web/.env.local` và điền giá trị thật (CONTRACT lấy từ Task 5). Xác nhận `.env.local` đã nằm trong `.gitignore` của create-next-app.
+Copy thành `frontend/.env.local` và điền giá trị thật (CONTRACT lấy từ Task 5). Xác nhận `.env.local` đã nằm trong `.gitignore` của create-next-app.
 
-- [ ] **Step 3: Viết `web/src/lib/config.ts`**
+- [ ] **Step 3: Viết `frontend/src/lib/config.ts`**
 
 ```ts
 // Public — dung duoc o ca client va server
@@ -593,7 +593,7 @@ export type Tone = (typeof TONES)[number];
 export const LENGTHS = [5, 8, 12] as const;
 ```
 
-- [ ] **Step 4: Viết `web/src/lib/supabase.ts`**
+- [ ] **Step 4: Viết `frontend/src/lib/supabase.ts`**
 
 ```ts
 import { createClient } from '@supabase/supabase-js';
@@ -608,7 +608,7 @@ export const supabase = createClient(
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): supabase schema, config and clients"
+git add -A && git commit -m "feat(frontend): supabase schema, config and clients"
 ```
 
 ---
@@ -616,9 +616,9 @@ git add -A && git commit -m "feat(web): supabase schema, config and clients"
 ### Task 7: Invoice library
 
 **Files:**
-- Create: `web/src/lib/invoices.ts`
+- Create: `frontend/src/lib/invoices.ts`
 
-- [ ] **Step 1: Viết `web/src/lib/invoices.ts`**
+- [ ] **Step 1: Viết `frontend/src/lib/invoices.ts`**
 
 ```ts
 import crypto from 'crypto';
@@ -707,7 +707,7 @@ export async function saveGenerationAndConsume(gen: Generation): Promise<Generat
 - [ ] **Step 2: Type-check**
 
 ```bash
-cd ~/Desktop/threadpay/web && npx tsc --noEmit
+cd ~/Desktop/threadpay/frontend && npx tsc --noEmit
 ```
 
 Expected: không lỗi.
@@ -715,7 +715,7 @@ Expected: không lỗi.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): invoice library with atomic consume"
+git add -A && git commit -m "feat(frontend): invoice library with atomic consume"
 ```
 
 ---
@@ -723,8 +723,8 @@ git add -A && git commit -m "feat(web): invoice library with atomic consume"
 ### Task 8: Receipt verification library (TDD)
 
 **Files:**
-- Create: `web/src/lib/receipt.ts`
-- Create: `web/src/lib/__tests__/receipt.test.ts`
+- Create: `frontend/src/lib/receipt.ts`
+- Create: `frontend/src/lib/__tests__/receipt.test.ts`
 
 - [ ] **Step 1: Viết failing test `receipt.test.ts`**
 
@@ -765,7 +765,7 @@ npm test
 
 Expected: FAIL — `../receipt` chưa tồn tại.
 
-- [ ] **Step 3: Viết `web/src/lib/receipt.ts`**
+- [ ] **Step 3: Viết `frontend/src/lib/receipt.ts`**
 
 ```ts
 import {
@@ -817,7 +817,7 @@ Expected: 2 tests PASS. (Nếu cấu trúc `cvToJSON` khác version, log thử `
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): on-chain receipt fetch and parse"
+git add -A && git commit -m "feat(frontend): on-chain receipt fetch and parse"
 ```
 
 ---
@@ -825,8 +825,8 @@ git add -A && git commit -m "feat(web): on-chain receipt fetch and parse"
 ### Task 9: Thread generation với Claude API (TDD phần parse)
 
 **Files:**
-- Create: `web/src/lib/generate-thread.ts`
-- Create: `web/src/lib/__tests__/generate-thread.test.ts`
+- Create: `frontend/src/lib/generate-thread.ts`
+- Create: `frontend/src/lib/__tests__/generate-thread.test.ts`
 
 - [ ] **Step 1: Viết failing test cho `parseThreadJson`**
 
@@ -863,7 +863,7 @@ describe('parseThreadJson', () => {
 npm test
 ```
 
-- [ ] **Step 3: Viết `web/src/lib/generate-thread.ts`**
+- [ ] **Step 3: Viết `frontend/src/lib/generate-thread.ts`**
 
 ```ts
 import Anthropic from '@anthropic-ai/sdk';
@@ -928,19 +928,19 @@ Expected: 6 tests PASS (2 receipt + 4 parse).
 - [ ] **Step 5: Smoke test thật với API key** (script tạm, không commit)
 
 ```bash
-cd ~/Desktop/threadpay/web
+cd ~/Desktop/threadpay/frontend
 npx tsx -e "
 import { generateThread } from './src/lib/generate-thread';
 generateThread('vi sao bitcoin can layer 2', 'educational', 5).then(t => console.log(t));
 " 2>/dev/null || npx --yes tsx -e "..."
 ```
 
-Expected: in ra mảng 5 tweet. (Cần `ANTHROPIC_API_KEY` trong env: `export $(grep ANTHROPIC web/.env.local)`.)
+Expected: in ra mảng 5 tweet. (Cần `ANTHROPIC_API_KEY` trong env: `export $(grep ANTHROPIC frontend/.env.local)`.)
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): claude thread generation with strict output parsing"
+git add -A && git commit -m "feat(frontend): claude thread generation with strict output parsing"
 ```
 
 ---
@@ -948,7 +948,7 @@ git add -A && git commit -m "feat(web): claude thread generation with strict out
 ### Task 10: API route `POST /api/generate` — luồng x402
 
 **Files:**
-- Create: `web/src/app/api/generate/route.ts`
+- Create: `frontend/src/app/api/generate/route.ts`
 
 - [ ] **Step 1: Viết route**
 
@@ -1039,7 +1039,7 @@ export async function POST(req: NextRequest) {
 - [ ] **Step 2: Test nhánh báo giá bằng curl**
 
 ```bash
-cd ~/Desktop/threadpay/web && npm run dev &
+cd ~/Desktop/threadpay/frontend && npm run dev &
 sleep 5
 curl -s -i -X POST localhost:3000/api/generate \
   -H 'Content-Type: application/json' \
@@ -1061,7 +1061,7 @@ Expected: `HTTP/1.1 402` + `"payment not found on-chain yet"`.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): x402 generate endpoint with on-chain verification"
+git add -A && git commit -m "feat(frontend): x402 generate endpoint with on-chain verification"
 ```
 
 ---
@@ -1069,9 +1069,9 @@ git add -A && git commit -m "feat(web): x402 generate endpoint with on-chain ver
 ### Task 11: API routes phụ — generation, history, stats
 
 **Files:**
-- Create: `web/src/app/api/generation/[invoiceId]/route.ts`
-- Create: `web/src/app/api/history/route.ts`
-- Create: `web/src/app/api/stats/route.ts`
+- Create: `frontend/src/app/api/generation/[invoiceId]/route.ts`
+- Create: `frontend/src/app/api/history/route.ts`
+- Create: `frontend/src/app/api/stats/route.ts`
 
 - [ ] **Step 1: Viết `generation/[invoiceId]/route.ts`** (lấy lại kết quả đã mua)
 
@@ -1141,7 +1141,7 @@ Expected: stats `{"threads":0,...}`, history `{"items":[]}`, generation `404`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): generation recovery, history and stats endpoints"
+git add -A && git commit -m "feat(frontend): generation recovery, history and stats endpoints"
 ```
 
 ---
@@ -1149,9 +1149,9 @@ git add -A && git commit -m "feat(web): generation recovery, history and stats e
 ### Task 12: Client-side Stacks library (ví, pay, wait tx)
 
 **Files:**
-- Create: `web/src/lib/stacks.ts`
+- Create: `frontend/src/lib/stacks.ts`
 
-- [ ] **Step 1: Viết `web/src/lib/stacks.ts`**
+- [ ] **Step 1: Viết `frontend/src/lib/stacks.ts`**
 
 ```ts
 'use client';
@@ -1227,7 +1227,7 @@ Expected: không lỗi. (Nếu `request('stx_callContract', ...)` báo lỗi typ
 - [ ] **Step 3: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): wallet connect, payment and tx polling helpers"
+git add -A && git commit -m "feat(frontend): wallet connect, payment and tx polling helpers"
 ```
 
 ---
@@ -1235,9 +1235,9 @@ git add -A && git commit -m "feat(web): wallet connect, payment and tx polling h
 ### Task 13: UI components
 
 **Files:**
-- Create: `web/src/components/ThreadForm.tsx`
-- Create: `web/src/components/TweetCard.tsx`
-- Create: `web/src/components/PaymentStatus.tsx`
+- Create: `frontend/src/components/ThreadForm.tsx`
+- Create: `frontend/src/components/TweetCard.tsx`
+- Create: `frontend/src/components/PaymentStatus.tsx`
 
 - [ ] **Step 1: Viết `ThreadForm.tsx`**
 
@@ -1397,7 +1397,7 @@ export function PaymentStatus({ phase, txid, error }: {
 
 ```bash
 npx tsc --noEmit
-git add -A && git commit -m "feat(web): thread form, tweet card and payment status components"
+git add -A && git commit -m "feat(frontend): thread form, tweet card and payment status components"
 ```
 
 ---
@@ -1405,7 +1405,7 @@ git add -A && git commit -m "feat(web): thread form, tweet card and payment stat
 ### Task 14: Trang chính — ghép luồng x402 end-to-end
 
 **Files:**
-- Modify: `web/src/app/page.tsx` (thay toàn bộ nội dung scaffold)
+- Modify: `frontend/src/app/page.tsx` (thay toàn bộ nội dung scaffold)
 
 - [ ] **Step 1: Viết `page.tsx`**
 
@@ -1538,7 +1538,7 @@ Mở `localhost:3000`: form hiển thị, nút Connect ví mở Leather/Xverse, 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add -A && git commit -m "feat(web): main page wiring full x402 flow"
+git add -A && git commit -m "feat(frontend): main page wiring full x402 flow"
 ```
 
 ---
@@ -1546,8 +1546,8 @@ git add -A && git commit -m "feat(web): main page wiring full x402 flow"
 ### Task 15: History panel theo ví
 
 **Files:**
-- Create: `web/src/components/HistoryPanel.tsx`
-- Modify: `web/src/app/page.tsx` (thêm panel dưới form)
+- Create: `frontend/src/components/HistoryPanel.tsx`
+- Modify: `frontend/src/app/page.tsx` (thêm panel dưới form)
 
 - [ ] **Step 1: Viết `HistoryPanel.tsx`**
 
@@ -1610,7 +1610,7 @@ Thêm trước `{stats && (` :
 
 ```bash
 npx tsc --noEmit
-git add -A && git commit -m "feat(web): purchase history panel by wallet"
+git add -A && git commit -m "feat(frontend): purchase history panel by wallet"
 ```
 
 ---
