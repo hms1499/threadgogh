@@ -81,9 +81,10 @@ Nhiệm vụ duy nhất: nhận tiền và lưu biên lai on-chain.
    - Đọc invoice từ Supabase, kiểm tra còn hạn, status hợp lệ.
    - Gọi read-only `get-receipt(invoiceId)` trên contract, kiểm tra amount
      khớp giá đã báo.
-   - Đánh dấu invoice `paid → consumed` (atomic, chống double-spend một
-     receipt cho hai lần generate).
-3. Gọi LLM generate thread → lưu vào bảng `generations` → trả kết quả.
+   - Receipt hợp lệ → set status `paid`.
+3. Gọi LLM generate thread → lưu vào bảng `generations` → set status
+   `consumed` (atomic update, chống double-spend một receipt cho hai lần
+   generate) → trả kết quả. Chỉ set `consumed` SAU KHI generate thành công.
 
 **Quy tắc tin cậy quan trọng:** nếu LLM lỗi *sau khi* user đã trả tiền,
 invoice CHƯA bị đánh dấu `consumed` — user retry miễn phí với cùng receipt.
