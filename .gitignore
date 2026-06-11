@@ -1,0 +1,20 @@
+# Node
+node_modules/
+
+# Next.js
+web/.next/
+web/out/
+
+# Clarinet
+contracts/.cache/
+contracts/node_modules/
+
+# Environment
+.env*.local
+.env
+
+# OS
+.DS_Store
+
+# Logs
+*.log
