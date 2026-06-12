@@ -1,65 +1,121 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+import { ThreadForm, type FormValues } from '@/components/ThreadForm';
+import { TweetCard } from '@/components/TweetCard';
+import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
+import { HistoryPanel } from '@/components/HistoryPanel';
+import { connectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
+
+type Quote = {
+  invoiceId: string; priceStx: number; priceSbtc: number; expiresAt: string;
+};
 
 export default function Home() {
+  const [address, setAddress] = useState<string | null>(null);
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [txid, setTxid] = useState<string>();
+  const [error, setError] = useState<string>();
+  const [thread, setThread] = useState<string[]>([]);
+  const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
+
+  useEffect(() => {
+    // Hydrate vi tu localStorage sau khi mount (getLocalStorage can `window`,
+    // khong chay duoc khi SSR nen khong the dung lazy useState initializer).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAddress(getAddress());
+    fetch('/api/stats').then((r) => r.json()).then(setStats).catch(() => {});
+  }, []);
+
+  async function handleGenerate(values: FormValues) {
+    setError(undefined); setThread([]); setTxid(undefined);
+    try {
+      if (!getAddress()) {
+        const addr = await connectWallet();
+        setAddress(addr);
+      }
+      // 1) Xin bao gia → expect 402
+      setPhase('quoting');
+      const quoteRes = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: values.topic, tone: values.tone, length: values.length }),
+      });
+      if (quoteRes.status !== 402) throw new Error('Không lấy được báo giá');
+      const quote: Quote = await quoteRes.json();
+
+      // 2) Ky contract-call tu vi
+      setPhase('awaiting-signature');
+      const amount = values.token === 'STX' ? quote.priceStx : quote.priceSbtc;
+      const tx = await payInvoice({ token: values.token, invoiceId: quote.invoiceId, amount });
+      setTxid(tx);
+
+      // 3) Cho confirm
+      setPhase('confirming');
+      const status = await waitForTx(tx);
+      if (status !== 'success') throw new Error('Transaction thất bại — invoice còn hạn, thử lại được');
+
+      // 4) Retry kem proof → nhan thread
+      setPhase('generating');
+      const genRes = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: quote.invoiceId, txId: tx }),
+      });
+      if (!genRes.ok) {
+        const e = await genRes.json().catch(() => ({}));
+        throw new Error(e.error ?? `Lỗi ${genRes.status}`);
+      }
+      const data = await genRes.json();
+      setThread(data.thread);
+      setPhase('done');
+      fetch('/api/stats').then((r) => r.json()).then(setStats).catch(() => {});
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Lỗi không xác định');
+      setPhase('error');
+    }
+  }
+
+  const busy = !['idle', 'done', 'error'].includes(phase);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="mx-auto max-w-xl p-6 flex flex-col gap-6">
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">⚡ ThreadPay</h1>
+        <button className="text-sm underline"
+          onClick={async () => setAddress(address ? null : await connectWallet())}>
+          {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connect ví'}
+        </button>
+      </header>
+      <p className="text-sm text-gray-600">
+        AI viết thread cho X — trả từng lần bằng STX hoặc sBTC. Không tài khoản, không subscription.
+      </p>
+
+      <ThreadForm onSubmit={handleGenerate} disabled={busy} />
+      <PaymentStatus phase={phase} txid={txid} error={error} />
+
+      {thread.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold">Thread của bạn 🧵</h2>
+            <button className="text-sm text-blue-600"
+              onClick={() => navigator.clipboard.writeText(thread.join('\n\n'))}>
+              Copy cả thread
+            </button>
+          </div>
+          {thread.map((t, i) => (
+            <TweetCard key={i} text={t} index={i} total={thread.length} />
+          ))}
+        </section>
+      )}
+
+      <HistoryPanel address={address} onSelect={(t) => { setThread(t); setPhase('done'); }} />
+
+      {stats && (
+        <footer className="text-xs text-gray-500 border-t pt-4">
+          🔥 {stats.threads} threads đã bán · {stats.stxRevenue / 1_000_000} STX + {stats.sbtcRevenue} sats doanh thu on-chain
+        </footer>
+      )}
+    </main>
   );
 }
