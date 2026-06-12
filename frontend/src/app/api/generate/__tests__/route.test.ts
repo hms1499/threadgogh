@@ -13,6 +13,7 @@ vi.mock('@/lib/invoices', () => ({
 }));
 vi.mock('@/lib/receipt', () => ({ fetchReceipt: vi.fn() }));
 vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn() }));
+vi.mock('@/lib/env', () => ({ assertServerEnv: vi.fn() }));
 
 import { POST } from '../route';
 import * as invoices from '@/lib/invoices';

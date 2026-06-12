@@ -75,8 +75,11 @@ Things to never change or assume without explicit reason:
   paid/consumed from client input alone.
 - **`SUPABASE_SERVICE_ROLE_KEY` is server-only.** Never import `lib/supabase.ts` into a
   client component or expose it via `NEXT_PUBLIC_*`.
-- **Network is testnet** (hardcoded in `lib/receipt.ts`, `lib/stacks.ts`). Mainnet is
-  not wired — don't assume it is.
+- **Network comes from `NEXT_PUBLIC_STACKS_NETWORK`** (default `testnet`), resolved once
+  in `lib/config.ts`. Mainnet isn't tested end-to-end; if you switch, also set a matching
+  `NEXT_PUBLIC_CONTRACT` and `NEXT_PUBLIC_HIRO_API`.
+- **Server env is validated at boot** (`instrumentation.ts` → `lib/env.ts`) and defensively
+  in the generate route. A missing var fails fast with a clear message — keep it that way.
 - **Never commit secrets.** `.env*.local` and `contracts/settings/Testnet.toml` are
   gitignored; keep it that way.
 

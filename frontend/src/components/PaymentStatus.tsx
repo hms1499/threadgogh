@@ -2,6 +2,7 @@
 
 import { Steps, Alert, Card, Typography, Flex } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
+import { STACKS_NETWORK } from '@/lib/config';
 
 export type Phase =
   | 'idle' | 'quoting' | 'awaiting-signature'
@@ -55,7 +56,7 @@ export function PaymentStatus({ phase, txid, error }: {
         {txid && (
           <Typography.Link
             className="tp-mono"
-            href={`https://explorer.hiro.so/txid/${txid}?chain=testnet`}
+            href={`https://explorer.hiro.so/txid/${txid}?chain=${STACKS_NETWORK}`}
             target="_blank"
             rel="noreferrer"
             style={{ fontSize: 13 }}

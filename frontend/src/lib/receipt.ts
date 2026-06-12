@@ -1,7 +1,7 @@
 import {
   fetchCallReadOnlyFunction, Cl, cvToJSON, type ClarityValue,
 } from '@stacks/transactions';
-import { CONTRACT } from './config';
+import { CONTRACT, STACKS_NETWORK } from './config';
 
 export type Receipt = {
   payer: string;
@@ -29,7 +29,7 @@ export async function fetchReceipt(invoiceIdHex: string): Promise<Receipt | null
     contractName,
     functionName: 'get-receipt',
     functionArgs: [Cl.bufferFromHex(invoiceIdHex)],
-    network: 'testnet',
+    network: STACKS_NETWORK,
     senderAddress: contractAddress,
   });
   return parseReceipt(result);

@@ -5,9 +5,19 @@ import {
 } from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
 import { generateThread } from '@/lib/generate-thread';
+import { assertServerEnv } from '@/lib/env';
 import { CONTRACT, SBTC_CONTRACT, TONES, LENGTHS, type Tone } from '@/lib/config';
 
 export async function POST(req: NextRequest) {
+  try {
+    assertServerEnv();
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'server misconfigured' },
+      { status: 500 },
+    );
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 });

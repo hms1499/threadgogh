@@ -6,6 +6,17 @@ export const SBTC_CONTRACT =
 export const HIRO_API =
   process.env.NEXT_PUBLIC_HIRO_API ?? 'https://api.testnet.hiro.so';
 
+// Stacks network — drives on-chain calls (receipt read, payInvoice) and explorer
+// links. Set NEXT_PUBLIC_HIRO_API + NEXT_PUBLIC_CONTRACT to match when changing it.
+export type StacksNetwork = 'mainnet' | 'testnet';
+const RAW_NETWORK = process.env.NEXT_PUBLIC_STACKS_NETWORK ?? 'testnet';
+if (RAW_NETWORK !== 'mainnet' && RAW_NETWORK !== 'testnet') {
+  throw new Error(
+    `Invalid NEXT_PUBLIC_STACKS_NETWORK "${RAW_NETWORK}". Allowed: mainnet, testnet`,
+  );
+}
+export const STACKS_NETWORK: StacksNetwork = RAW_NETWORK;
+
 // Server-only
 export const PRICE_STX = Number(process.env.PRICE_STX ?? 100000);
 export const PRICE_SBTC = Number(process.env.PRICE_SBTC ?? 100);

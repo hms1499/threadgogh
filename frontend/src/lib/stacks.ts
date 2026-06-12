@@ -2,7 +2,7 @@
 
 import { connect, disconnect, getLocalStorage, request } from '@stacks/connect';
 import { Cl, Pc } from '@stacks/transactions';
-import { CONTRACT, SBTC_CONTRACT, HIRO_API } from './config';
+import { CONTRACT, SBTC_CONTRACT, HIRO_API, STACKS_NETWORK } from './config';
 
 export async function connectWallet(): Promise<string> {
   await connect();
@@ -30,7 +30,7 @@ export async function payInvoice(opts: {
 
   const common = {
     contract: CONTRACT as `${string}.${string}`,
-    network: 'testnet' as const,
+    network: STACKS_NETWORK,
     postConditionMode: 'deny' as const,
   };
   if (opts.token === 'STX') {
