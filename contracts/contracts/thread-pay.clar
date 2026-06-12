@@ -30,3 +30,40 @@
     (ok true)
   )
 )
+
+(define-public (pay-sbtc (token <ft-trait>) (invoice-id (buff 32)) (amount uint))
+  (begin
+    (asserts! (is-eq (contract-of token) (var-get sbtc-contract)) ERR-WRONG-TOKEN)
+    (asserts! (>= amount (var-get min-price-sbtc)) ERR-UNDERPAID)
+    (asserts! (is-none (map-get? receipts invoice-id)) ERR-DUPLICATE-INVOICE)
+    (try! (contract-call? token transfer amount tx-sender (var-get treasury) none))
+    (map-set receipts invoice-id
+      { payer: tx-sender, amount: amount, token: "SBTC", paid-at: burn-block-height })
+    (ok true)
+  )
+)
+
+(define-public (set-prices (stx-price uint) (sbtc-price uint))
+  (begin
+    (asserts! (is-eq tx-sender (var-get owner)) ERR-NOT-OWNER)
+    (var-set min-price-stx stx-price)
+    (var-set min-price-sbtc sbtc-price)
+    (ok true)
+  )
+)
+
+(define-public (set-sbtc-contract (new-contract principal))
+  (begin
+    (asserts! (is-eq tx-sender (var-get owner)) ERR-NOT-OWNER)
+    (var-set sbtc-contract new-contract)
+    (ok true)
+  )
+)
+
+(define-public (set-treasury (new-treasury principal))
+  (begin
+    (asserts! (is-eq tx-sender (var-get owner)) ERR-NOT-OWNER)
+    (var-set treasury new-treasury)
+    (ok true)
+  )
+)
