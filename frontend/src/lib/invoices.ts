@@ -9,7 +9,7 @@ export type Invoice = {
   length: number;
   price_stx: number;
   price_sbtc: number;
-  status: 'pending' | 'paid' | 'consumed';
+  status: 'pending' | 'paid' | 'generating' | 'consumed';
   expires_at: string;
 };
 
@@ -40,11 +40,25 @@ export async function getInvoice(invoiceId: string): Promise<Invoice | null> {
   return data;
 }
 
-export async function markPaid(invoiceId: string): Promise<void> {
+// Khoa generation atomic: chi mot request chuyen duoc pending -> generating.
+// DB dam bao transition nay race-safe (chi 1 row khop status='pending').
+// Tra true neu request nay gianh duoc quyen generate, false neu da co request khac.
+export async function claimInvoice(invoiceId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('invoices').update({ status: 'generating' })
+    .eq('invoice_id', invoiceId).eq('status', 'pending')
+    .select('invoice_id');
+  if (error) throw new Error(`claimInvoice: ${error.message}`);
+  return (data?.length ?? 0) > 0;
+}
+
+// Nha khoa khi generation that bai: generating -> pending, cho phep retry mien phi
+// (receipt van con on-chain nen lan sau van verify duoc).
+export async function releaseInvoice(invoiceId: string): Promise<void> {
   const { error } = await supabase
-    .from('invoices').update({ status: 'paid' })
-    .eq('invoice_id', invoiceId).eq('status', 'pending');
-  if (error) throw new Error(`markPaid: ${error.message}`);
+    .from('invoices').update({ status: 'pending' })
+    .eq('invoice_id', invoiceId).eq('status', 'generating');
+  if (error) throw new Error(`releaseInvoice: ${error.message}`);
 }
 
 export type Generation = {

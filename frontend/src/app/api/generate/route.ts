@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  createInvoice, getInvoice, getGeneration, markPaid,
+  createInvoice, getInvoice, getGeneration, claimInvoice, releaseInvoice,
   saveGenerationAndConsume, isExpired,
 } from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
@@ -48,12 +48,23 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: 'invoice already consumed' }, { status: 409 });
   }
-  if (invoice.status === 'pending' && isExpired(invoice)) {
-    return NextResponse.json({ error: 'invoice expired, request a new quote' }, { status: 410 });
+  if (invoice.status === 'generating') {
+    // Mot request khac dang generate → tra ket qua neu xong, khong thi 202.
+    const existing = await getGeneration(invoice.invoice_id);
+    if (existing) {
+      return NextResponse.json({ thread: existing.thread_content, invoiceId: invoice.invoice_id });
+    }
+    return NextResponse.json({ error: 'generation in progress, retry shortly' }, { status: 202 });
   }
 
+  // Verify thanh toan on-chain TRUOC khi xet het han: mot payment confirm muon
+  // (invoice da qua expires_at) van phai duoc honor — neu khong user mat tien.
   const receipt = await fetchReceipt(invoice.invoice_id);
   if (!receipt) {
+    // Chua co payment on-chain. Neu invoice het han ma chua tra → coi nhu bo.
+    if (isExpired(invoice)) {
+      return NextResponse.json({ error: 'invoice expired, request a new quote' }, { status: 410 });
+    }
     return NextResponse.json({ error: 'payment not found on-chain yet' }, { status: 402 });
   }
   const required = receipt.token === 'STX'
@@ -61,12 +72,30 @@ export async function POST(req: NextRequest) {
   if (receipt.amount < required) {
     return NextResponse.json({ error: 'underpaid' }, { status: 402 });
   }
-  await markPaid(invoice.invoice_id);
 
-  // LLM loi o day → invoice van o trang thai 'paid', user retry mien phi.
-  const thread = await generateThread(
-    invoice.topic, invoice.tone as Tone, invoice.length,
-  );
+  // Khoa atomic: chi request gianh duoc pending → generating moi goi LLM.
+  // Chong double-spend khi co request song song cung invoiceId.
+  const claimed = await claimInvoice(invoice.invoice_id);
+  if (!claimed) {
+    const existing = await getGeneration(invoice.invoice_id);
+    if (existing) {
+      return NextResponse.json({ thread: existing.thread_content, invoiceId: invoice.invoice_id });
+    }
+    return NextResponse.json({ error: 'generation in progress, retry shortly' }, { status: 202 });
+  }
+
+  let thread: string[];
+  try {
+    thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length);
+  } catch (e) {
+    // LLM loi → nha khoa de user retry mien phi (receipt van con on-chain).
+    await releaseInvoice(invoice.invoice_id);
+    const message = e instanceof Error ? e.message : 'generation failed';
+    return NextResponse.json(
+      { error: `generation failed, payment preserved, retry: ${message}` },
+      { status: 500 },
+    );
+  }
 
   const gen = await saveGenerationAndConsume({
     invoice_id: invoice.invoice_id,

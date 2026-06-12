@@ -7,7 +7,7 @@ create table invoices (
   price_stx bigint not null,
   price_sbtc bigint not null,
   status text not null default 'pending'
-    check (status in ('pending', 'paid', 'consumed')),
+    check (status in ('pending', 'paid', 'generating', 'consumed')),
   expires_at timestamptz not null,
   created_at timestamptz not null default now()
 );
