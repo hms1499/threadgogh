@@ -1,29 +1,16 @@
-;; title: mock-sbtc
-;; version:
-;; summary:
-;; description:
+(impl-trait .traits.ft-trait)
 
-;; traits
-;;
+(define-fungible-token mock-sbtc)
 
-;; token definitions
-;;
+(define-constant ERR-NOT-SENDER (err u4))
 
-;; constants
-;;
+(define-public (transfer (amount uint) (sender principal) (recipient principal) (memo (optional (buff 34))))
+  (begin
+    (asserts! (is-eq tx-sender sender) ERR-NOT-SENDER)
+    (ft-transfer? mock-sbtc amount sender recipient)
+  )
+)
 
-;; data vars
-;;
-
-;; data maps
-;;
-
-;; public functions
-;;
-
-;; read only functions
-;;
-
-;; private functions
-;;
-
+(define-public (mint (amount uint) (recipient principal))
+  (ft-mint? mock-sbtc amount recipient)
+)
