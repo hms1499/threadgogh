@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createInvoice, getInvoice, getGeneration, claimInvoice, releaseInvoice,
-  saveGenerationAndConsume, isExpired,
+  saveGenerationAndConsume, isExpired, isGeneratingStale,
 } from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
 import { generateThread } from '@/lib/generate-thread';
@@ -49,12 +49,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invoice already consumed' }, { status: 409 });
   }
   if (invoice.status === 'generating') {
-    // Another request is generating → return result if ready, otherwise 202.
+    // Another request is generating → return result if ready.
     const existing = await getGeneration(invoice.invoice_id);
     if (existing) {
       return NextResponse.json({ thread: existing.thread_content, invoiceId: invoice.invoice_id });
     }
-    return NextResponse.json({ error: 'generation in progress, retry shortly' }, { status: 202 });
+    // Fresh lock → genuinely in progress, ask the client to retry shortly.
+    // Stale lock → the previous worker crashed; fall through to re-verify the
+    // on-chain receipt and reclaim the slot (claimInvoice matches stale locks).
+    if (!isGeneratingStale(invoice)) {
+      return NextResponse.json({ error: 'generation in progress, retry shortly' }, { status: 202 });
+    }
+    console.warn(`[generate] reclaiming stale lock for invoice ${invoice.invoice_id}`);
   }
 
   // Verify the on-chain payment BEFORE checking expiry: a late-confirmed payment

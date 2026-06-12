@@ -5,7 +5,7 @@ import { ExportOutlined } from '@ant-design/icons';
 
 export type Phase =
   | 'idle' | 'quoting' | 'awaiting-signature'
-  | 'confirming' | 'generating' | 'done' | 'error';
+  | 'confirming' | 'generating' | 'recover' | 'done' | 'error';
 
 // Map phase -> step dang chay (0..3).
 const PHASE_STEP: Record<Phase, number> = {
@@ -14,6 +14,7 @@ const PHASE_STEP: Record<Phase, number> = {
   'awaiting-signature': 1,
   confirming: 2,
   generating: 3,
+  recover: -1,
   done: 4,
   error: -1,
 };
@@ -35,6 +36,12 @@ export function PaymentStatus({ phase, txid, error }: {
       <Flex vertical gap={14}>
         {phase === 'error' ? (
           <Alert type="error" showIcon message={error ?? 'Something went wrong'} />
+        ) : phase === 'recover' ? (
+          <Alert
+            type="warning"
+            showIcon
+            message={error ?? 'Payment is still confirming — your invoice is saved. Check again shortly.'}
+          />
         ) : (
           <Steps
             size="small"

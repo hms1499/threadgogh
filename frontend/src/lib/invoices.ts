@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { supabase } from './supabase';
-import { PRICE_STX, PRICE_SBTC, INVOICE_TTL_MINUTES } from './config';
+import { PRICE_STX, PRICE_SBTC, INVOICE_TTL_MINUTES, GENERATING_STALE_MS } from './config';
 
 export type Invoice = {
   invoice_id: string;
@@ -11,10 +11,19 @@ export type Invoice = {
   price_sbtc: number;
   status: 'pending' | 'paid' | 'generating' | 'consumed';
   expires_at: string;
+  generating_at?: string | null;
 };
 
 export function isExpired(invoice: Pick<Invoice, 'expires_at'>): boolean {
   return new Date(invoice.expires_at).getTime() < Date.now();
+}
+
+// A 'generating' invoice whose lock is older than the threshold is stale: the
+// request that claimed it likely died before saving. Such a lock may be reclaimed.
+// A missing timestamp is treated as fresh (conservative — never reclaim blindly).
+export function isGeneratingStale(invoice: Pick<Invoice, 'generating_at'>): boolean {
+  if (!invoice.generating_at) return false;
+  return new Date(invoice.generating_at).getTime() < Date.now() - GENERATING_STALE_MS;
 }
 
 export async function createInvoice(
@@ -40,13 +49,18 @@ export async function getInvoice(invoiceId: string): Promise<Invoice | null> {
   return data;
 }
 
-// Atomic generation lock: only one request can move pending -> generating.
-// The DB makes this transition race-safe (only 1 row matches status='pending').
-// Returns true if this request won the generation slot, false if another already did.
+// Atomic generation lock. The DB makes the transition race-safe: a single UPDATE
+// claims the slot only if the row is either still 'pending' OR a STALE 'generating'
+// (lock older than GENERATING_STALE_MS — its owner crashed). Stamping generating_at
+// lets a future request reclaim this slot if WE crash too, so a paid user is never
+// stuck forever. Returns true if this request won the slot.
 export async function claimInvoice(invoiceId: string): Promise<boolean> {
+  const staleBefore = new Date(Date.now() - GENERATING_STALE_MS).toISOString();
   const { data, error } = await supabase
-    .from('invoices').update({ status: 'generating' })
-    .eq('invoice_id', invoiceId).eq('status', 'pending')
+    .from('invoices')
+    .update({ status: 'generating', generating_at: new Date().toISOString() })
+    .eq('invoice_id', invoiceId)
+    .or(`status.eq.pending,and(status.eq.generating,generating_at.lt.${staleBefore})`)
     .select('invoice_id');
   if (error) throw new Error(`claimInvoice: ${error.message}`);
   return (data?.length ?? 0) > 0;
@@ -56,7 +70,7 @@ export async function claimInvoice(invoiceId: string): Promise<boolean> {
 // (the receipt stays on-chain, so the next attempt can still verify it).
 export async function releaseInvoice(invoiceId: string): Promise<void> {
   const { error } = await supabase
-    .from('invoices').update({ status: 'pending' })
+    .from('invoices').update({ status: 'pending', generating_at: null })
     .eq('invoice_id', invoiceId).eq('status', 'generating');
   if (error) throw new Error(`releaseInvoice: ${error.message}`);
 }

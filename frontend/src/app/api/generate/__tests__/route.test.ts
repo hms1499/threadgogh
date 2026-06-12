@@ -9,6 +9,7 @@ vi.mock('@/lib/invoices', () => ({
   releaseInvoice: vi.fn(),
   saveGenerationAndConsume: vi.fn(),
   isExpired: vi.fn(),
+  isGeneratingStale: vi.fn(),
 }));
 vi.mock('@/lib/receipt', () => ({ fetchReceipt: vi.fn() }));
 vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn() }));
@@ -164,13 +165,31 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
     expect(generateThread).not.toHaveBeenCalled();
   });
 
-  it('status=generating with no result yet -> 202', async () => {
+  it('status=generating, FRESH lock, no result yet -> 202 (no reclaim)', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice({ status: 'generating' }));
     m(invoices.getGeneration).mockResolvedValue(null);
+    m(invoices.isGeneratingStale).mockReturnValue(false);
     const res = await POST(req({ invoiceId: INVOICE_ID }));
     expect(res.status).toBe(202);
     expect(fetchReceipt).not.toHaveBeenCalled();
     expect(generateThread).not.toHaveBeenCalled();
+  });
+
+  // ITEM 1 (senior review): a crashed worker must not strand a paid user forever.
+  it('status=generating, STALE lock, no result -> reclaims, re-verifies, generates', async () => {
+    m(invoices.getInvoice).mockResolvedValue(baseInvoice({ status: 'generating' }));
+    m(invoices.getGeneration).mockResolvedValue(null);
+    m(invoices.isGeneratingStale).mockReturnValue(true); // previous worker died
+    m(invoices.isExpired).mockReturnValue(false);
+    m(fetchReceipt).mockResolvedValue(stxReceipt); // payment is on-chain
+    m(invoices.claimInvoice).mockResolvedValue(true); // we win the stale slot
+    m(generateThread).mockResolvedValue(['recovered']);
+    m(invoices.saveGenerationAndConsume).mockImplementation(async (g) => g);
+    const res = await POST(req({ invoiceId: INVOICE_ID }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).thread).toEqual(['recovered']);
+    expect(fetchReceipt).toHaveBeenCalledTimes(1);
+    expect(generateThread).toHaveBeenCalledTimes(1);
   });
 
   it('LLM fails after claim -> releases invoice for free retry, returns 500', async () => {

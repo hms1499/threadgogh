@@ -7,7 +7,7 @@ import { ThreadForm, type FormValues } from '@/components/ThreadForm';
 import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { HistoryPanel } from '@/components/HistoryPanel';
-import { connectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
+import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
 
 const { Title, Paragraph } = Typography;
 
@@ -22,6 +22,9 @@ export default function Home() {
   const [txid, setTxid] = useState<string>();
   const [error, setError] = useState<string>();
   const [thread, setThread] = useState<string[]>([]);
+  // Invoice awaiting redemption: payment sent but result not yet retrieved
+  // (slow confirmation or generation in progress). Drives the recovery path.
+  const [pendingInvoiceId, setPendingInvoiceId] = useState<string>();
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
 
   function refreshStats() {
@@ -37,8 +40,44 @@ export default function Home() {
     refreshStats();
   }, []);
 
+  // Submit the on-chain proof and retrieve the thread. Reused by the happy path AND
+  // the manual "Check payment" recovery button. Never throws — it resolves to a
+  // recoverable 'recover' state on 402/202 (payment not confirmed yet / still generating)
+  // so the user never sees a hard error while their funds are safely on-chain.
+  async function redeem(invoiceId: string, txId?: string) {
+    try {
+      setError(undefined);
+      setPhase('generating');
+      const genRes = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId, txId }),
+      });
+      if (genRes.status === 402 || genRes.status === 202) {
+        setPendingInvoiceId(invoiceId);
+        setPhase('recover');
+        setError(genRes.status === 402
+          ? 'Payment not confirmed on-chain yet — wait a moment, then Check payment.'
+          : 'AI is still writing your thread — Check payment again in a moment.');
+        return;
+      }
+      if (!genRes.ok) {
+        const e = await genRes.json().catch(() => ({}));
+        throw new Error(e.error ?? `Error ${genRes.status}`);
+      }
+      const data = await genRes.json();
+      setThread(data.thread);
+      setPendingInvoiceId(undefined);
+      setPhase('done');
+      refreshStats();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+      setPhase('error');
+    }
+  }
+
   async function handleGenerate(values: FormValues) {
-    setError(undefined); setThread([]); setTxid(undefined);
+    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined);
     try {
       if (!getAddress()) {
         const addr = await connectWallet();
@@ -60,32 +99,31 @@ export default function Home() {
 
       setPhase('confirming');
       const status = await waitForTx(tx);
-      if (status !== 'success') throw new Error('Transaction failed — invoice still valid, you can retry');
-
-      setPhase('generating');
-      const genRes = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: quote.invoiceId, txId: tx }),
-      });
-      if (!genRes.ok) {
-        const e = await genRes.json().catch(() => ({}));
-        throw new Error(e.error ?? `Error ${genRes.status}`);
+      if (status === 'failed') {
+        throw new Error('Transaction reverted on-chain — invoice still valid, you can retry');
       }
-      const data = await genRes.json();
-      setThread(data.thread);
-      setPhase('done');
-      refreshStats();
+      if (status === 'pending') {
+        // Slow confirmation — do NOT error. Hand off to the recovery path.
+        setPendingInvoiceId(quote.invoiceId);
+        setPhase('recover');
+        setError('Confirmation is taking longer than usual. Your invoice is saved — click Check payment once the tx confirms.');
+        return;
+      }
+      await redeem(quote.invoiceId, tx);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
       setPhase('error');
     }
   }
 
-  const busy = !['idle', 'done', 'error'].includes(phase);
+  const busy = !['idle', 'done', 'error', 'recover'].includes(phase);
 
   async function toggleWallet() {
-    if (address) { setAddress(null); return; }
+    if (address) {
+      disconnectWallet();   // xoa session @stacks/connect, khong chi clear state
+      setAddress(null);
+      return;
+    }
     setAddress(await connectWallet());
   }
 
@@ -114,6 +152,16 @@ export default function Home() {
 
       <div style={{ marginTop: 20 }}>
         <PaymentStatus phase={phase} txid={txid} error={error} />
+        {phase === 'recover' && pendingInvoiceId && (
+          <Button
+            type="primary"
+            block
+            style={{ marginTop: 12 }}
+            onClick={() => redeem(pendingInvoiceId, txid)}
+          >
+            Check payment
+          </Button>
+        )}
       </div>
 
       {thread.length > 0 && (
