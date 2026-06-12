@@ -10,7 +10,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.104.1",
     "@stacks/connect": "^8.2.6",
     "@stacks/transactions": "^7.4.0",
     "@supabase/supabase-js": "^2.108.1",
