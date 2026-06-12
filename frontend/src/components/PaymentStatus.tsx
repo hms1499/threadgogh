@@ -19,10 +19,10 @@ const PHASE_STEP: Record<Phase, number> = {
 };
 
 const STEP_ITEMS = [
-  { title: 'Báo giá', description: 'HTTP 402' },
-  { title: 'Ký ví', description: 'Leather/Xverse' },
+  { title: 'Quote', description: 'HTTP 402' },
+  { title: 'Sign', description: 'Leather/Xverse' },
   { title: 'Confirm', description: 'On-chain' },
-  { title: 'Viết thread', description: 'AI' },
+  { title: 'Generate', description: 'AI' },
 ];
 
 export function PaymentStatus({ phase, txid, error }: {
@@ -34,7 +34,7 @@ export function PaymentStatus({ phase, txid, error }: {
     <Card variant="borderless" className="tp-rise" style={{ background: 'rgba(22,20,24,0.5)' }}>
       <Flex vertical gap={14}>
         {phase === 'error' ? (
-          <Alert type="error" showIcon message={error ?? 'Có lỗi xảy ra'} />
+          <Alert type="error" showIcon message={error ?? 'Something went wrong'} />
         ) : (
           <Steps
             size="small"

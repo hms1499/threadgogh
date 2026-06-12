@@ -1,4 +1,4 @@
-// Public — dung duoc o ca client va server
+// Public — usable on both client and server
 export const CONTRACT = process.env.NEXT_PUBLIC_CONTRACT ?? '';
 export const SBTC_CONTRACT =
   process.env.NEXT_PUBLIC_SBTC_CONTRACT ??

@@ -40,9 +40,9 @@ export async function getInvoice(invoiceId: string): Promise<Invoice | null> {
   return data;
 }
 
-// Khoa generation atomic: chi mot request chuyen duoc pending -> generating.
-// DB dam bao transition nay race-safe (chi 1 row khop status='pending').
-// Tra true neu request nay gianh duoc quyen generate, false neu da co request khac.
+// Atomic generation lock: only one request can move pending -> generating.
+// The DB makes this transition race-safe (only 1 row matches status='pending').
+// Returns true if this request won the generation slot, false if another already did.
 export async function claimInvoice(invoiceId: string): Promise<boolean> {
   const { data, error } = await supabase
     .from('invoices').update({ status: 'generating' })
@@ -52,8 +52,8 @@ export async function claimInvoice(invoiceId: string): Promise<boolean> {
   return (data?.length ?? 0) > 0;
 }
 
-// Nha khoa khi generation that bai: generating -> pending, cho phep retry mien phi
-// (receipt van con on-chain nen lan sau van verify duoc).
+// Release the lock when generation fails: generating -> pending, allowing a free retry
+// (the receipt stays on-chain, so the next attempt can still verify it).
 export async function releaseInvoice(invoiceId: string): Promise<void> {
   const { error } = await supabase
     .from('invoices').update({ status: 'pending' })
@@ -77,9 +77,9 @@ export async function getGeneration(invoiceId: string): Promise<Generation | nul
   return data;
 }
 
-// Atomic consume: unique constraint tren invoice_id la chot chong double-spend.
-// Insert thanh cong → minh la nguoi dau tien → set consumed.
-// Insert dinh unique violation (23505) → da co generation → tra ban cu.
+// Atomic consume: the unique constraint on invoice_id is the anti-double-spend guard.
+// Insert succeeds → we're the first → set consumed.
+// Insert hits a unique violation (23505) → a generation already exists → return it.
 export async function saveGenerationAndConsume(gen: Generation): Promise<Generation> {
   const { error } = await supabase.from('generations').insert(gen);
   if (error) {

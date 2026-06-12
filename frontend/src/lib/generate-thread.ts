@@ -7,8 +7,8 @@ const TONE_GUIDE: Record<Tone, string> = {
 };
 
 // ── Provider abstraction ──────────────────────────────────────────────
-// Doi nha cung cap LLM chi bang env LLM_PROVIDER (mac dinh: groq mien phi).
-// Groq/OpenRouter/Ollama dung chuan OpenAI chat-completions; Gemini rieng.
+// Switch LLM provider with just the LLM_PROVIDER env var (default: groq, free).
+// Groq/OpenRouter/Ollama use the OpenAI chat-completions shape; Gemini is separate.
 
 const PROVIDERS = ['groq', 'gemini', 'openrouter', 'ollama'] as const;
 export type Provider = (typeof PROVIDERS)[number];
@@ -32,7 +32,7 @@ const DEFAULTS: Record<Provider, { baseUrl: string; model: string; keyEnv: strin
   ollama: {
     baseUrl: 'http://localhost:11434/v1',
     model: 'llama3.2',
-    keyEnv: '', // local, khong can key
+    keyEnv: '', // local, no key needed
   },
 };
 
@@ -87,6 +87,7 @@ async function callLlm(config: LlmConfig, system: string, user: string): Promise
   }
 
   // OpenAI-compatible: groq, openrouter, ollama
+  // (handled here; gemini returned above)
   const res = await fetch(`${config.baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {

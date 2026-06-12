@@ -50,7 +50,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: values.topic, tone: values.tone, length: values.length }),
       });
-      if (quoteRes.status !== 402) throw new Error('Không lấy được báo giá');
+      if (quoteRes.status !== 402) throw new Error('Could not get a quote');
       const quote: Quote = await quoteRes.json();
 
       setPhase('awaiting-signature');
@@ -60,7 +60,7 @@ export default function Home() {
 
       setPhase('confirming');
       const status = await waitForTx(tx);
-      if (status !== 'success') throw new Error('Transaction thất bại — invoice còn hạn, thử lại được');
+      if (status !== 'success') throw new Error('Transaction failed — invoice still valid, you can retry');
 
       setPhase('generating');
       const genRes = await fetch('/api/generate', {
@@ -70,14 +70,14 @@ export default function Home() {
       });
       if (!genRes.ok) {
         const e = await genRes.json().catch(() => ({}));
-        throw new Error(e.error ?? `Lỗi ${genRes.status}`);
+        throw new Error(e.error ?? `Error ${genRes.status}`);
       }
       const data = await genRes.json();
       setThread(data.thread);
       setPhase('done');
       refreshStats();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Lỗi không xác định');
+      setError(e instanceof Error ? e.message : 'Unknown error');
       setPhase('error');
     }
   }
@@ -100,12 +100,12 @@ export default function Home() {
           onClick={toggleWallet}
           className={address ? 'tp-mono' : undefined}
         >
-          {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect ví'}
+          {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect wallet'}
         </Button>
       </Flex>
 
       <Paragraph type="secondary" className="tp-rise" style={{ marginTop: 12, marginBottom: 28, fontSize: 15 }}>
-        AI viết thread cho X — trả từng lần bằng STX hoặc sBTC trên Stacks. Không tài khoản, không subscription.
+        AI writes X threads — pay per generate with STX or sBTC on Stacks. No account, no subscription.
       </Paragraph>
 
       <div className="tp-rise" style={{ animationDelay: '0.06s' }}>
@@ -120,7 +120,7 @@ export default function Home() {
         <Flex vertical gap={12} className="tp-rise" style={{ marginTop: 28 }}>
           <Flex justify="space-between" align="center">
             <Title level={4} className="tp-display" style={{ margin: 0 }}>
-              Thread của bạn 🧵
+              Your thread 🧵
             </Title>
             <Button
               type="text"
@@ -128,10 +128,10 @@ export default function Home() {
               icon={<CopyOutlined />}
               onClick={() => {
                 navigator.clipboard.writeText(thread.join('\n\n'));
-                message.success('Đã copy cả thread');
+                message.success('Whole thread copied');
               }}
             >
-              Copy cả thread
+              Copy whole thread
             </Button>
           </Flex>
           {thread.map((t, i) => (
@@ -149,19 +149,19 @@ export default function Home() {
           <Divider style={{ marginTop: 40, marginBottom: 20 }} />
           <Flex gap={32} wrap>
             <Statistic
-              title="Threads đã bán"
+              title="Threads sold"
               value={stats.threads}
               styles={{ content: { fontFamily: 'var(--font-display)', color: '#F7931A' } }}
             />
             <Statistic
-              title="Doanh thu STX"
+              title="STX revenue"
               value={stats.stxRevenue / 1_000_000}
               suffix="STX"
               precision={2}
               styles={{ content: { fontFamily: 'var(--font-display)' } }}
             />
             <Statistic
-              title="Doanh thu sBTC"
+              title="sBTC revenue"
               value={stats.sbtcRevenue}
               suffix="sats"
               styles={{ content: { fontFamily: 'var(--font-display)' } }}

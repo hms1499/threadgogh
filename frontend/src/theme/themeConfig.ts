@@ -1,7 +1,7 @@
 import { theme, type ThemeConfig } from 'antd';
 
-// "On-chain Bitcoin terminal" — dark, am, accent cam Bitcoin.
-// Token-hoa manh de antd khong bi look xanh mac dinh.
+// "On-chain Bitcoin terminal" — dark, warm, Bitcoin-orange accent.
+// Heavily tokenized so antd doesn't look like its default blue.
 const BITCOIN = '#F7931A';
 
 const themeConfig: ThemeConfig = {

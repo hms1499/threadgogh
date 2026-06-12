@@ -58,6 +58,8 @@ genesis:
   - signers
   - signers-voting
   - costs-4
+  - costs-5
+  - pox-5
 plan:
   batches:
   - id: 0
@@ -77,4 +79,4 @@ plan:
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/thread-pay.clar
       clarity-version: 4
-    epoch: '3.3'
+    epoch: '3.4'

@@ -10,7 +10,7 @@ const invoiceA = new Uint8Array(32).fill(1);
 const invoiceB = new Uint8Array(32).fill(2);
 
 describe('pay-stx', () => {
-  it('ghi receipt khi tra du gia toi thieu', () => {
+  it('records a receipt when paying at least the minimum price', () => {
     const res = simnet.callPublicFn(
       'thread-pay', 'pay-stx',
       [Cl.buffer(invoiceA), Cl.uint(100000)], wallet1,
@@ -30,7 +30,7 @@ describe('pay-stx', () => {
     );
   });
 
-  it('reject khi tra thieu (ERR-UNDERPAID u100)', () => {
+  it('rejects underpayment (ERR-UNDERPAID u100)', () => {
     const res = simnet.callPublicFn(
       'thread-pay', 'pay-stx',
       [Cl.buffer(invoiceA), Cl.uint(99999)], wallet1,
@@ -38,7 +38,7 @@ describe('pay-stx', () => {
     expect(res.result).toBeErr(Cl.uint(100));
   });
 
-  it('reject invoice-id trung (ERR-DUPLICATE-INVOICE u101)', () => {
+  it('rejects a duplicate invoice-id (ERR-DUPLICATE-INVOICE u101)', () => {
     const first = simnet.callPublicFn(
       'thread-pay', 'pay-stx',
       [Cl.buffer(invoiceB), Cl.uint(100000)], wallet1,
@@ -51,7 +51,7 @@ describe('pay-stx', () => {
     expect(second.result).toBeErr(Cl.uint(101));
   });
 
-  it('get-receipt tra none cho invoice chua thanh toan', () => {
+  it('get-receipt returns none for an unpaid invoice', () => {
     const receipt = simnet.callReadOnlyFn(
       'thread-pay', 'get-receipt',
       [Cl.buffer(new Uint8Array(32).fill(9))], wallet1,
@@ -64,14 +64,14 @@ describe('pay-sbtc', () => {
   const invoiceC = new Uint8Array(32).fill(3);
 
   function setupMockSbtc() {
-    // owner tro sbtc-contract ve mock, mint cho wallet1
+    // owner points sbtc-contract at the mock, mints to wallet1
     simnet.callPublicFn('thread-pay', 'set-sbtc-contract',
       [Cl.contractPrincipal(deployer, 'mock-sbtc')], deployer);
     simnet.callPublicFn('mock-sbtc', 'mint',
       [Cl.uint(10000), Cl.principal(wallet1)], deployer);
   }
 
-  it('ghi receipt SBTC khi tra qua mock token', () => {
+  it('records an SBTC receipt when paying via the mock token', () => {
     setupMockSbtc();
     const res = simnet.callPublicFn(
       'thread-pay', 'pay-sbtc',
@@ -93,9 +93,9 @@ describe('pay-sbtc', () => {
     );
   });
 
-  it('reject token contract la (ERR-WRONG-TOKEN u103)', () => {
-    // sbtc-contract dang la mock (set o test truoc trong cung file) —
-    // goi voi traits contract khac se bi reject
+  it('rejects a foreign token contract (ERR-WRONG-TOKEN u103)', () => {
+    // sbtc-contract is set to the mock by setupMockSbtc, then repointed elsewhere —
+    // calling pay-sbtc with the mock token no longer matches and gets rejected
     setupMockSbtc();
     simnet.callPublicFn('thread-pay', 'set-sbtc-contract',
       [Cl.contractPrincipal(deployer, 'thread-pay')], deployer);
@@ -109,7 +109,7 @@ describe('pay-sbtc', () => {
 });
 
 describe('admin', () => {
-  it('set-prices chi owner duoc goi (ERR-NOT-OWNER u102)', () => {
+  it('set-prices is owner-only (ERR-NOT-OWNER u102)', () => {
     const notOwner = simnet.callPublicFn(
       'thread-pay', 'set-prices', [Cl.uint(1), Cl.uint(1)], wallet1,
     );

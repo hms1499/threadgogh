@@ -35,7 +35,7 @@ export function HistoryPanel({ address, onSelect }: {
   return (
     <Flex vertical gap={10}>
       <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-        Threads đã mua
+        Your threads
       </Text>
       <List
         size="small"
@@ -46,7 +46,7 @@ export function HistoryPanel({ address, onSelect }: {
             style={{ cursor: 'pointer', paddingInline: 4 }}
           >
             <List.Item.Meta
-              title={<Text>{it.invoices?.topic ?? '(không rõ topic)'}</Text>}
+              title={<Text>{it.invoices?.topic ?? '(unknown topic)'}</Text>}
               description={
                 <Flex gap={8} align="center">
                   <Tag className="tp-mono" bordered={false} color={it.token === 'SBTC' ? 'gold' : 'default'}>

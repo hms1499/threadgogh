@@ -8,8 +8,8 @@ import { TONES, LENGTHS, type Tone } from '@/lib/config';
 const { Text } = Typography;
 
 const TONE_LABELS: Record<Tone, string> = {
-  educational: '📚 Giáo dục',
-  funny: '😂 Hài hước',
+  educational: '📚 Educational',
+  funny: '😂 Funny',
   threadboi: '🧵 Thread-boi',
 };
 
@@ -41,18 +41,18 @@ export function ThreadForm({ onSubmit, disabled }: {
 
   return (
     <Flex vertical gap={20}>
-      <Field label="Chủ đề">
+      <Field label="Topic">
         <Input.TextArea
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          placeholder="Nhập topic hoặc ý tưởng cho thread..."
+          placeholder="Enter a topic or idea for your thread..."
           maxLength={300}
           showCount
           autoSize={{ minRows: 3, maxRows: 6 }}
         />
       </Field>
 
-      <Field label="Tông giọng">
+      <Field label="Tone">
         <Segmented
           block
           value={tone}
@@ -61,7 +61,7 @@ export function ThreadForm({ onSubmit, disabled }: {
         />
       </Field>
 
-      <Field label="Độ dài">
+      <Field label="Length">
         <Segmented
           block
           value={length}
@@ -70,7 +70,7 @@ export function ThreadForm({ onSubmit, disabled }: {
         />
       </Field>
 
-      <Field label="Thanh toán bằng">
+      <Field label="Pay with">
         <Segmented
           block
           value={token}

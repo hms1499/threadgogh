@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock cac bien gioi I/O cua route (DB, on-chain, LLM).
+// Mock the route's I/O boundaries (DB, on-chain, LLM).
 vi.mock('@/lib/invoices', () => ({
   createInvoice: vi.fn(),
   getInvoice: vi.fn(),
@@ -20,7 +20,7 @@ import { generateThread } from '@/lib/generate-thread';
 
 const m = vi.mocked;
 
-// NextRequest gia: route chi goi req.json()
+// Fake NextRequest: the route only calls req.json()
 function req(body: unknown) {
   return { json: async () => body } as unknown as Parameters<typeof POST>[0];
 }
@@ -47,8 +47,8 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('POST /api/generate — bao gia (nhanh 1)', () => {
-  it('tra 402 + invoice moi khi chua co invoiceId', async () => {
+describe('POST /api/generate — quote (branch 1)', () => {
+  it('returns 402 + a new invoice when no invoiceId', async () => {
     m(invoices.createInvoice).mockResolvedValue(baseInvoice());
     const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
     expect(res.status).toBe(402);
@@ -57,21 +57,21 @@ describe('POST /api/generate — bao gia (nhanh 1)', () => {
     expect(json.priceStx).toBe(100000);
   });
 
-  it('tra 400 khi tone/length khong hop le', async () => {
+  it('returns 400 for invalid tone/length', async () => {
     const res = await POST(req({ topic: 'x', tone: 'nope', length: 99 }));
     expect(res.status).toBe(400);
     expect(invoices.createInvoice).not.toHaveBeenCalled();
   });
 });
 
-describe('POST /api/generate — verify + generate (nhanh 2)', () => {
-  it('tra 404 khi invoice khong ton tai', async () => {
+describe('POST /api/generate — verify + generate (branch 2)', () => {
+  it('returns 404 when the invoice does not exist', async () => {
     m(invoices.getInvoice).mockResolvedValue(null);
     const res = await POST(req({ invoiceId: INVOICE_ID }));
     expect(res.status).toBe(404);
   });
 
-  it('invoice consumed -> tra lai thread cu, khong goi LLM', async () => {
+  it('consumed invoice -> returns cached thread, no LLM call', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice({ status: 'consumed' }));
     m(invoices.getGeneration).mockResolvedValue({
       invoice_id: INVOICE_ID, payer_address: 'ST1PAYER', token: 'STX',
@@ -83,7 +83,7 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(generateThread).not.toHaveBeenCalled();
   });
 
-  it('chua co receipt va chua het han -> 402, khong goi LLM', async () => {
+  it('no receipt and not expired -> 402, no LLM call', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue(null);
@@ -92,7 +92,7 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(generateThread).not.toHaveBeenCalled();
   });
 
-  it('chua co receipt va da het han -> 410', async () => {
+  it('no receipt and expired -> 410', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
     m(invoices.isExpired).mockReturnValue(true);
     m(fetchReceipt).mockResolvedValue(null);
@@ -100,11 +100,11 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(res.status).toBe(410);
   });
 
-  // MUC 1: receipt on-chain phai duoc honor ngay ca khi invoice da het han.
-  it('da tra tien nhung invoice het han -> VAN generate (khong mat tien)', async () => {
+  // ITEM 1: an on-chain receipt must be honored even if the invoice has expired.
+  it('paid but invoice expired -> STILL generates (no lost funds)', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
-    m(invoices.isExpired).mockReturnValue(true); // het han
-    m(fetchReceipt).mockResolvedValue(stxReceipt); // nhung da tra on-chain
+    m(invoices.isExpired).mockReturnValue(true); // expired
+    m(fetchReceipt).mockResolvedValue(stxReceipt); // but already paid on-chain
     m(invoices.claimInvoice).mockResolvedValue(true);
     m(generateThread).mockResolvedValue(['t1', 't2']);
     m(invoices.saveGenerationAndConsume).mockImplementation(async (g) => g);
@@ -114,7 +114,7 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(generateThread).toHaveBeenCalledTimes(1);
   });
 
-  it('tra thieu -> 402 underpaid, khong goi LLM', async () => {
+  it('underpaid -> 402, no LLM call', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue({ ...stxReceipt, amount: 99999n });
@@ -123,7 +123,7 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(generateThread).not.toHaveBeenCalled();
   });
 
-  it('thanh toan hop le -> claim thang -> generate va luu', async () => {
+  it('valid payment -> wins claim -> generates and saves', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue(stxReceipt);
@@ -137,19 +137,19 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(invoices.saveGenerationAndConsume).toHaveBeenCalledTimes(1);
   });
 
-  // MUC 2: hai request song song -> chi mot cai generate.
-  it('thua claim (request song song) -> KHONG goi LLM, tra 202', async () => {
+  // ITEM 2: two concurrent requests -> only one generates.
+  it('loses claim (concurrent request) -> NO LLM call, returns 202', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue(stxReceipt);
-    m(invoices.claimInvoice).mockResolvedValue(false); // request kia da claim
-    m(invoices.getGeneration).mockResolvedValue(null); // winner chua xong
+    m(invoices.claimInvoice).mockResolvedValue(false); // the other request already claimed
+    m(invoices.getGeneration).mockResolvedValue(null); // winner not done yet
     const res = await POST(req({ invoiceId: INVOICE_ID }));
     expect(res.status).toBe(202);
     expect(generateThread).not.toHaveBeenCalled();
   });
 
-  it('thua claim nhung generation da xong -> tra thread cu', async () => {
+  it('loses claim but generation already done -> returns cached thread', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue(stxReceipt);
@@ -164,7 +164,7 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(generateThread).not.toHaveBeenCalled();
   });
 
-  it('status=generating va chua co ket qua -> 202', async () => {
+  it('status=generating with no result yet -> 202', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice({ status: 'generating' }));
     m(invoices.getGeneration).mockResolvedValue(null);
     const res = await POST(req({ invoiceId: INVOICE_ID }));
@@ -173,7 +173,7 @@ describe('POST /api/generate — verify + generate (nhanh 2)', () => {
     expect(generateThread).not.toHaveBeenCalled();
   });
 
-  it('LLM loi sau khi claim -> release invoice de retry mien phi, tra 500', async () => {
+  it('LLM fails after claim -> releases invoice for free retry, returns 500', async () => {
     m(invoices.getInvoice).mockResolvedValue(baseInvoice());
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue(stxReceipt);

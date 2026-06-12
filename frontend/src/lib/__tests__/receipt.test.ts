@@ -5,7 +5,7 @@ import { parseReceipt } from '../receipt';
 const ADDR = 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
 
 describe('parseReceipt', () => {
-  it('parse some(tuple) thanh Receipt', () => {
+  it('parses some(tuple) into a Receipt', () => {
     const cv = Cl.some(Cl.tuple({
       payer: Cl.standardPrincipal(ADDR),
       amount: Cl.uint(100000),
@@ -20,7 +20,7 @@ describe('parseReceipt', () => {
     });
   });
 
-  it('tra null cho none', () => {
+  it('returns null for none', () => {
     expect(parseReceipt(Cl.none())).toBeNull();
   });
 });

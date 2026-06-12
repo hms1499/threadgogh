@@ -43,7 +43,7 @@ export function TweetCard({ text, index, total }: {
           icon={<CopyOutlined />}
           onClick={async () => {
             await navigator.clipboard.writeText(text);
-            message.success('Đã copy tweet');
+            message.success('Tweet copied');
           }}
         >
           Copy

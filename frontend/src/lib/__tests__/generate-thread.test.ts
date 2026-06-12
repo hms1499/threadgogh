@@ -2,29 +2,29 @@ import { describe, expect, it } from 'vitest';
 import { parseThreadJson, resolveLlmConfig, extractText } from '../generate-thread';
 
 describe('parseThreadJson', () => {
-  it('parse JSON array tran', () => {
+  it('parses a plain JSON array', () => {
     expect(parseThreadJson('["tweet 1", "tweet 2"]')).toEqual(['tweet 1', 'tweet 2']);
   });
 
-  it('parse khi bi boc trong code fence', () => {
+  it('parses when wrapped in a code fence', () => {
     const raw = '```json\n["a", "b", "c"]\n```';
     expect(parseThreadJson(raw)).toEqual(['a', 'b', 'c']);
   });
 
-  it('cat tweet vuot 280 ky tu', () => {
+  it('truncates tweets over 280 chars', () => {
     const long = 'x'.repeat(300);
     const out = parseThreadJson(JSON.stringify([long]));
     expect(out[0].length).toBeLessThanOrEqual(280);
   });
 
-  it('throw khi khong phai array of strings', () => {
+  it('throws when not an array of strings', () => {
     expect(() => parseThreadJson('{"a":1}')).toThrow();
     expect(() => parseThreadJson('not json')).toThrow();
   });
 });
 
 describe('resolveLlmConfig', () => {
-  it('mac dinh la groq voi model llama 3.3', () => {
+  it('defaults to groq with the llama 3.3 model', () => {
     const c = resolveLlmConfig({ GROQ_API_KEY: 'k' });
     expect(c.provider).toBe('groq');
     expect(c.baseUrl).toContain('groq.com');
@@ -32,40 +32,40 @@ describe('resolveLlmConfig', () => {
     expect(c.apiKey).toBe('k');
   });
 
-  it('doc LLM_PROVIDER de doi nha cung cap', () => {
+  it('reads LLM_PROVIDER to switch provider', () => {
     const c = resolveLlmConfig({ LLM_PROVIDER: 'gemini', GEMINI_API_KEY: 'g' });
     expect(c.provider).toBe('gemini');
     expect(c.apiKey).toBe('g');
   });
 
-  it('LLM_MODEL override model mac dinh', () => {
+  it('LLM_MODEL overrides the default model', () => {
     const c = resolveLlmConfig({ LLM_PROVIDER: 'openrouter', LLM_MODEL: 'org/x:free' });
     expect(c.model).toBe('org/x:free');
   });
 
-  it('ollama khong can api key', () => {
+  it('ollama needs no api key', () => {
     const c = resolveLlmConfig({ LLM_PROVIDER: 'ollama' });
     expect(c.provider).toBe('ollama');
     expect(c.apiKey).toBe('');
   });
 
-  it('throw voi provider la', () => {
+  it('throws for an unknown provider', () => {
     expect(() => resolveLlmConfig({ LLM_PROVIDER: 'foobar' })).toThrow();
   });
 });
 
 describe('extractText', () => {
-  it('boc text tu OpenAI-compatible shape (groq/openrouter/ollama)', () => {
+  it('extracts text from the OpenAI-compatible shape (groq/openrouter/ollama)', () => {
     const json = { choices: [{ message: { content: '["a","b"]' } }] };
     expect(extractText('groq', json)).toBe('["a","b"]');
   });
 
-  it('boc text tu Gemini shape', () => {
+  it('extracts text from the Gemini shape', () => {
     const json = { candidates: [{ content: { parts: [{ text: '["c"]' }] } }] };
     expect(extractText('gemini', json)).toBe('["c"]');
   });
 
-  it('throw khi shape khong nhu mong doi', () => {
+  it('throws when the shape is unexpected', () => {
     expect(() => extractText('groq', {})).toThrow();
     expect(() => extractText('gemini', {})).toThrow();
   });
