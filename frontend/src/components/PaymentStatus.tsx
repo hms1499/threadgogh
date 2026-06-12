@@ -1,37 +1,62 @@
 'use client';
 
+import { Steps, Alert, Card, Typography, Flex } from 'antd';
+import { ExportOutlined } from '@ant-design/icons';
+
 export type Phase =
   | 'idle' | 'quoting' | 'awaiting-signature'
   | 'confirming' | 'generating' | 'done' | 'error';
 
-const MESSAGES: Record<Phase, string> = {
-  idle: '',
-  quoting: 'Đang lấy báo giá (HTTP 402)...',
-  'awaiting-signature': 'Mở ví để ký thanh toán...',
-  confirming: 'Chờ transaction confirm trên Stacks (~10s)...',
-  generating: 'Đã thanh toán ✓ — AI đang viết thread...',
-  done: '',
-  error: 'Có lỗi xảy ra.',
+// Map phase -> step dang chay (0..3).
+const PHASE_STEP: Record<Phase, number> = {
+  idle: -1,
+  quoting: 0,
+  'awaiting-signature': 1,
+  confirming: 2,
+  generating: 3,
+  done: 4,
+  error: -1,
 };
+
+const STEP_ITEMS = [
+  { title: 'Báo giá', description: 'HTTP 402' },
+  { title: 'Ký ví', description: 'Leather/Xverse' },
+  { title: 'Confirm', description: 'On-chain' },
+  { title: 'Viết thread', description: 'AI' },
+];
 
 export function PaymentStatus({ phase, txid, error }: {
   phase: Phase; txid?: string; error?: string;
 }) {
   if (phase === 'idle' || phase === 'done') return null;
+
   return (
-    <div className="rounded-lg border p-4 text-sm flex flex-col gap-1">
-      <span>{phase === 'error' ? (error ?? MESSAGES.error) : MESSAGES[phase]}</span>
-      {txid && (
-        <a className="text-blue-600 underline" target="_blank" rel="noreferrer"
-          href={`https://explorer.hiro.so/txid/${txid}?chain=testnet`}>
-          Xem transaction trên explorer ↗
-        </a>
-      )}
-      {(phase === 'confirming' || phase === 'generating' || phase === 'quoting') && (
-        <div className="h-1 w-full overflow-hidden rounded bg-gray-200">
-          <div className="h-full w-1/3 animate-pulse bg-orange-500" />
-        </div>
-      )}
-    </div>
+    <Card variant="borderless" className="tp-rise" style={{ background: 'rgba(22,20,24,0.5)' }}>
+      <Flex vertical gap={14}>
+        {phase === 'error' ? (
+          <Alert type="error" showIcon message={error ?? 'Có lỗi xảy ra'} />
+        ) : (
+          <Steps
+            size="small"
+            responsive
+            current={PHASE_STEP[phase]}
+            status="process"
+            items={STEP_ITEMS}
+          />
+        )}
+
+        {txid && (
+          <Typography.Link
+            className="tp-mono"
+            href={`https://explorer.hiro.so/txid/${txid}?chain=testnet`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: 13 }}
+          >
+            {txid.slice(0, 10)}…{txid.slice(-8)} <ExportOutlined />
+          </Typography.Link>
+        )}
+      </Flex>
+    </Card>
   );
 }

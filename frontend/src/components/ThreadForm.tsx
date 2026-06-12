@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { Input, Segmented, Button, Typography, Flex } from 'antd';
+import { ThunderboltFilled } from '@ant-design/icons';
 import { TONES, LENGTHS, type Tone } from '@/lib/config';
+
+const { Text } = Typography;
 
 const TONE_LABELS: Record<Tone, string> = {
   educational: '📚 Giáo dục',
@@ -10,6 +14,17 @@ const TONE_LABELS: Record<Tone, string> = {
 };
 
 export type FormValues = { topic: string; tone: Tone; length: number; token: 'STX' | 'SBTC' };
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Flex vertical gap={8}>
+      <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        {label}
+      </Text>
+      {children}
+    </Flex>
+  );
+}
 
 export function ThreadForm({ onSubmit, disabled }: {
   onSubmit: (v: FormValues) => void;
@@ -20,52 +35,65 @@ export function ThreadForm({ onSubmit, disabled }: {
   const [length, setLength] = useState<number>(8);
   const [token, setToken] = useState<'STX' | 'SBTC'>('STX');
 
+  function submit() {
+    if (topic.trim()) onSubmit({ topic: topic.trim(), tone, length, token });
+  }
+
   return (
-    <form
-      className="flex flex-col gap-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (topic.trim()) onSubmit({ topic: topic.trim(), tone, length, token });
-      }}
-    >
-      <textarea
-        className="rounded-lg border p-3 min-h-24"
-        placeholder="Nhập topic hoặc ý tưởng cho thread..."
-        maxLength={300}
-        value={topic}
-        onChange={(e) => setTopic(e.target.value)}
-      />
-      <div className="flex gap-2 flex-wrap">
-        {TONES.map((t) => (
-          <button key={t} type="button"
-            className={`rounded-full border px-3 py-1 text-sm ${tone === t ? 'bg-black text-white' : ''}`}
-            onClick={() => setTone(t)}>
-            {TONE_LABELS[t]}
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        {LENGTHS.map((l) => (
-          <button key={l} type="button"
-            className={`rounded-full border px-3 py-1 text-sm ${length === l ? 'bg-black text-white' : ''}`}
-            onClick={() => setLength(l)}>
-            {l} tweets
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        {(['STX', 'SBTC'] as const).map((tk) => (
-          <button key={tk} type="button"
-            className={`rounded-full border px-3 py-1 text-sm ${token === tk ? 'bg-orange-500 text-white' : ''}`}
-            onClick={() => setToken(tk)}>
-            Trả bằng {tk === 'SBTC' ? 'sBTC' : 'STX'}
-          </button>
-        ))}
-      </div>
-      <button type="submit" disabled={disabled || !topic.trim()}
-        className="rounded-lg bg-black text-white py-3 font-semibold disabled:opacity-40">
-        ⚡ Generate Thread
-      </button>
-    </form>
+    <Flex vertical gap={20}>
+      <Field label="Chủ đề">
+        <Input.TextArea
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="Nhập topic hoặc ý tưởng cho thread..."
+          maxLength={300}
+          showCount
+          autoSize={{ minRows: 3, maxRows: 6 }}
+        />
+      </Field>
+
+      <Field label="Tông giọng">
+        <Segmented
+          block
+          value={tone}
+          onChange={(v) => setTone(v as Tone)}
+          options={TONES.map((t) => ({ label: TONE_LABELS[t], value: t }))}
+        />
+      </Field>
+
+      <Field label="Độ dài">
+        <Segmented
+          block
+          value={length}
+          onChange={(v) => setLength(Number(v))}
+          options={LENGTHS.map((l) => ({ label: `${l} tweets`, value: l }))}
+        />
+      </Field>
+
+      <Field label="Thanh toán bằng">
+        <Segmented
+          block
+          value={token}
+          onChange={(v) => setToken(v as 'STX' | 'SBTC')}
+          options={[
+            { label: '⚡ STX', value: 'STX' },
+            { label: '₿ sBTC', value: 'SBTC' },
+          ]}
+        />
+      </Field>
+
+      <Button
+        type="primary"
+        size="large"
+        block
+        disabled={disabled || !topic.trim()}
+        loading={disabled}
+        onClick={submit}
+        icon={<ThunderboltFilled />}
+        style={{ marginTop: 4 }}
+      >
+        Generate Thread
+      </Button>
+    </Flex>
   );
 }

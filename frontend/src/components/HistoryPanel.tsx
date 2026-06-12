@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { List, Typography, Tag, Flex } from 'antd';
+
+const { Text } = Typography;
 
 type Item = {
   invoice_id: string;
@@ -28,17 +31,36 @@ export function HistoryPanel({ address, onSelect }: {
   }, [address]);
 
   if (!address || items.length === 0) return null;
+
   return (
-    <section className="flex flex-col gap-2 border-t pt-4">
-      <h2 className="font-semibold text-sm">Threads đã mua</h2>
-      {items.map((it) => (
-        <button key={it.invoice_id}
-          className="text-left text-sm rounded border p-2 hover:bg-gray-50"
-          onClick={() => onSelect(it.thread_content)}>
-          <span className="font-medium">{it.invoices?.topic ?? '(không rõ topic)'}</span>
-          <span className="text-gray-500"> · {it.token} · {new Date(it.created_at).toLocaleString()}</span>
-        </button>
-      ))}
-    </section>
+    <Flex vertical gap={10}>
+      <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        Threads đã mua
+      </Text>
+      <List
+        size="small"
+        dataSource={items}
+        renderItem={(it) => (
+          <List.Item
+            onClick={() => onSelect(it.thread_content)}
+            style={{ cursor: 'pointer', paddingInline: 4 }}
+          >
+            <List.Item.Meta
+              title={<Text>{it.invoices?.topic ?? '(không rõ topic)'}</Text>}
+              description={
+                <Flex gap={8} align="center">
+                  <Tag className="tp-mono" bordered={false} color={it.token === 'SBTC' ? 'gold' : 'default'}>
+                    {it.token}
+                  </Tag>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {new Date(it.created_at).toLocaleString()}
+                  </Text>
+                </Flex>
+              }
+            />
+          </List.Item>
+        )}
+      />
+    </Flex>
   );
 }

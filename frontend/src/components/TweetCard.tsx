@@ -1,27 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { Card, Typography, Button, Tag, Flex, App } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
+
+const { Paragraph, Text } = Typography;
 
 export function TweetCard({ text, index, total }: {
   text: string; index: number; total: number;
 }) {
-  const [copied, setCopied] = useState(false);
+  const { message } = App.useApp();
+  const over = text.length > 280;
+
   return (
-    <div className="rounded-xl border p-4 flex flex-col gap-2">
-      <div className="flex justify-between text-xs text-gray-500">
-        <span>{index + 1}/{total}</span>
-        <span className={text.length > 280 ? 'text-red-500' : ''}>{text.length}/280</span>
-      </div>
-      <p className="whitespace-pre-wrap">{text}</p>
-      <button
-        className="self-end text-sm text-blue-600"
-        onClick={async () => {
-          await navigator.clipboard.writeText(text);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        }}>
-        {copied ? '✓ Đã copy' : 'Copy'}
-      </button>
-    </div>
+    <Card
+      size="small"
+      variant="outlined"
+      style={{ backdropFilter: 'blur(10px)' }}
+      styles={{ body: { padding: 16 } }}
+    >
+      <Flex justify="space-between" align="center">
+        <Text className="tp-mono" type="secondary" style={{ fontSize: 12 }}>
+          {String(index + 1).padStart(2, '0')} / {total}
+        </Text>
+        <Tag
+          className="tp-mono"
+          color={over ? 'error' : undefined}
+          bordered={false}
+          style={{ marginInlineEnd: 0 }}
+        >
+          {text.length}/280
+        </Tag>
+      </Flex>
+
+      <Paragraph style={{ whiteSpace: 'pre-wrap', margin: '12px 0 8px', fontSize: 15, lineHeight: 1.6 }}>
+        {text}
+      </Paragraph>
+
+      <Flex justify="flex-end">
+        <Button
+          size="small"
+          type="text"
+          icon={<CopyOutlined />}
+          onClick={async () => {
+            await navigator.clipboard.writeText(text);
+            message.success('Đã copy tweet');
+          }}
+        >
+          Copy
+        </Button>
+      </Flex>
+    </Card>
   );
 }
