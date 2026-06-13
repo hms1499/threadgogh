@@ -1,6 +1,6 @@
 'use client';
 
-import { Steps, Alert, Card, Typography, Flex } from 'antd';
+import { Steps, Alert, Typography, Flex } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
 import { STACKS_NETWORK } from '@/lib/config';
 
@@ -8,7 +8,6 @@ export type Phase =
   | 'idle' | 'quoting' | 'awaiting-signature'
   | 'confirming' | 'generating' | 'recover' | 'done' | 'error';
 
-// Map phase -> step dang chay (0..3).
 const PHASE_STEP: Record<Phase, number> = {
   idle: -1,
   quoting: 0,
@@ -21,9 +20,9 @@ const PHASE_STEP: Record<Phase, number> = {
 };
 
 const STEP_ITEMS = [
-  { title: 'Quote', description: 'HTTP 402' },
-  { title: 'Sign', description: 'Leather/Xverse' },
-  { title: 'Confirm', description: 'On-chain' },
+  { title: 'Quote',    description: 'HTTP 402' },
+  { title: 'Sign',     description: 'Wallet' },
+  { title: 'Confirm',  description: 'On-chain' },
   { title: 'Generate', description: 'AI' },
 ];
 
@@ -33,16 +32,15 @@ export function PaymentStatus({ phase, txid, error }: {
   if (phase === 'idle' || phase === 'done') return null;
 
   return (
-    <Card variant="borderless" className="tp-rise" style={{ background: 'rgba(22,20,24,0.5)' }}>
+    <div
+      className="vg-card tp-rise"
+      style={{ borderRadius: 12, padding: '16px 18px' }}
+    >
       <Flex vertical gap={14}>
         {phase === 'error' ? (
           <Alert type="error" showIcon message={error ?? 'Something went wrong'} />
         ) : phase === 'recover' ? (
-          <Alert
-            type="warning"
-            showIcon
-            message={error ?? 'Payment is still confirming — your invoice is saved. Check again shortly.'}
-          />
+          <Alert type="warning" showIcon message={error ?? 'Payment is still confirming — your invoice is saved.'} />
         ) : (
           <Steps
             size="small"
@@ -59,12 +57,12 @@ export function PaymentStatus({ phase, txid, error }: {
             href={`https://explorer.hiro.so/txid/${txid}?chain=${STACKS_NETWORK}`}
             target="_blank"
             rel="noreferrer"
-            style={{ fontSize: 13 }}
+            style={{ fontSize: 12, color: '#9fa8d4' }}
           >
             {txid.slice(0, 10)}…{txid.slice(-8)} <ExportOutlined />
           </Typography.Link>
         )}
       </Flex>
-    </Card>
+    </div>
   );
 }

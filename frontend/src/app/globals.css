@@ -1,66 +1,120 @@
 @import "tailwindcss";
 
+/* ─── Van Gogh · Starry Night palette ─────────────────────────── */
 :root {
   color-scheme: dark;
+  --vg-night:   #0d1427;
+  --vg-deep:    #080e1c;
+  --vg-cobalt:  #1a2f6e;
+  --vg-sky:     #253d8a;
+  --vg-swirl:   #3d5aad;
+  --vg-star:    #f5d76e;
+  --vg-moon:    #f7e190;
+  --vg-wheat:   #e8900a;
+  --vg-canvas:  #e8eaf6;
+  --vg-muted:   #9fa8d4;
+  --vg-card:    rgba(13, 26, 62, 0.88);
+  --vg-border:  rgba(61, 90, 173, 0.4);
 }
 
-html,
-body {
-  min-height: 100%;
-}
+html, body { min-height: 100%; }
 
-/* "On-chain Bitcoin terminal": nen den am + quang sang cam o tren. */
+/* ─── Atmospheric night sky background ────────────────────────── */
 body {
   margin: 0;
-  background-color: #0a0a0b;
-  color: #f4f1ec;
+  background-color: var(--vg-night);
+  color: var(--vg-canvas);
   font-family: var(--font-sora), system-ui, sans-serif;
   background-image:
-    radial-gradient(115% 75% at 50% -12%, rgba(247, 147, 26, 0.20) 0%, rgba(247, 147, 26, 0.05) 28%, transparent 58%),
-    radial-gradient(90% 60% at 100% 0%, rgba(255, 86, 28, 0.10) 0%, transparent 50%);
+    /* Moon halo */
+    radial-gradient(circle 160px at 84% 10%, rgba(247, 225, 144, 0.22) 0%, transparent 70%),
+    /* Sky swirl left */
+    radial-gradient(ellipse 500px 280px at 15% 25%, rgba(37, 61, 138, 0.55) 0%, transparent 70%),
+    /* Sky swirl right */
+    radial-gradient(ellipse 420px 320px at 78% 35%, rgba(26, 47, 110, 0.45) 0%, transparent 65%),
+    /* Middle depth */
+    radial-gradient(ellipse 700px 400px at 50% 55%, rgba(13, 26, 62, 0.6) 0%, transparent 70%),
+    /* Base gradient */
+    linear-gradient(170deg, #0f1d45 0%, var(--vg-night) 45%, var(--vg-deep) 100%);
   background-attachment: fixed;
 }
 
-/* Grain overlay tao chat film, phu len toan trang. */
+/* ─── Star field ───────────────────────────────────────────────── */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.045;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='380'%3E%3Ccircle cx='23' cy='18' r='1.5' fill='%23f5d76e' opacity='.9'/%3E%3Ccircle cx='78' cy='55' r='1' fill='%23f7e190' opacity='.7'/%3E%3Ccircle cx='156' cy='28' r='2' fill='%23f5d76e' opacity='.85'/%3E%3Ccircle cx='234' cy='72' r='1' fill='%23f7e190' opacity='.6'/%3E%3Ccircle cx='312' cy='14' r='1.5' fill='%23f5d76e' opacity='.8'/%3E%3Ccircle cx='389' cy='44' r='1' fill='%23f7e190' opacity='.7'/%3E%3Ccircle cx='45' cy='110' r='1' fill='%23f5d76e' opacity='.6'/%3E%3Ccircle cx='123' cy='140' r='2' fill='%23f7e190' opacity='.75'/%3E%3Ccircle cx='201' cy='95' r='1.5' fill='%23f5d76e' opacity='.8'/%3E%3Ccircle cx='289' cy='120' r='1' fill='%23f7e190' opacity='.65'/%3E%3Ccircle cx='367' cy='85' r='1' fill='%23f5d76e' opacity='.7'/%3E%3Ccircle cx='67' cy='195' r='1.5' fill='%23f5d76e' opacity='.8'/%3E%3Ccircle cx='145' cy='215' r='1' fill='%23f7e190' opacity='.6'/%3E%3Ccircle cx='223' cy='178' r='2' fill='%23f5d76e' opacity='.85'/%3E%3Ccircle cx='301' cy='200' r='1' fill='%23f7e190' opacity='.7'/%3E%3Ccircle cx='435' cy='165' r='1.5' fill='%23f5d76e' opacity='.75'/%3E%3Ccircle cx='89' cy='260' r='1' fill='%23f7e190' opacity='.6'/%3E%3Ccircle cx='178' cy='275' r='1.5' fill='%23f5d76e' opacity='.7'/%3E%3Ccircle cx='256' cy='245' r='1' fill='%23f7e190' opacity='.65'/%3E%3Ccircle cx='334' cy='280' r='2' fill='%23f5d76e' opacity='.8'/%3E%3Ccircle cx='470' cy='240' r='1' fill='%23f7e190' opacity='.7'/%3E%3Ccircle cx='12' cy='310' r='1' fill='%23f5d76e' opacity='.6'/%3E%3Ccircle cx='100' cy='345' r='1.5' fill='%23f7e190' opacity='.75'/%3E%3Ccircle cx='200' cy='320' r='1' fill='%23f5d76e' opacity='.65'/%3E%3Ccircle cx='300' cy='360' r='2' fill='%23f7e190' opacity='.8'/%3E%3Ccircle cx='400' cy='330' r='1' fill='%23f5d76e' opacity='.7'/%3E%3Ccircle cx='490' cy='355' r='1.5' fill='%23f7e190' opacity='.65'/%3E%3Ccircle cx='55' cy='370' r='1' fill='%23f5d76e' opacity='.6'/%3E%3Ccircle cx='450' cy='100' r='2' fill='%23f5d76e' opacity='.8'/%3E%3Ccircle cx='480' cy='32' r='1.5' fill='%23f7e190' opacity='.7'/%3E%3Ccircle cx='420' cy='300' r='1' fill='%23f5d76e' opacity='.65'/%3E%3C/svg%3E");
+  background-size: 500px 380px;
+  opacity: 0.9;
+  animation: vg-drift 180s linear infinite;
 }
 
-/* Font display cho tieu de — distinctive, characterful. */
+@keyframes vg-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 500px 380px; }
+}
+
+/* ─── Van Gogh brush-stroke texture overlay ───────────────────── */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='60'%3E%3Cpath d='M0 15 Q75 8 150 16 Q225 22 300 14' stroke='%236b8fc7' stroke-width='2.5' fill='none' opacity='.18'/%3E%3Cpath d='M0 32 Q60 26 120 34 Q200 40 300 30' stroke='%234a6fa5' stroke-width='2' fill='none' opacity='.14'/%3E%3Cpath d='M0 48 Q80 42 160 50 Q240 55 300 46' stroke='%233d5aad' stroke-width='2' fill='none' opacity='.12'/%3E%3C/svg%3E");
+  background-size: 300px 60px;
+  opacity: 1;
+  mix-blend-mode: screen;
+}
+
+/* ─── Typography utilities ─────────────────────────────────────── */
 .tp-display {
-  font-family: var(--font-display), var(--font-sora), sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.01em;
 }
 
 .tp-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
 
-/* Noi dung noi tren atmosphere. */
+/* ─── Layout shell (sits above bg layers) ─────────────────────── */
 .tp-shell {
   position: relative;
   z-index: 1;
 }
 
-/* Reveal nhe khi load trang. */
+/* ─── Van Gogh card ────────────────────────────────────────────── */
+.vg-card {
+  background: var(--vg-card) !important;
+  border: 1px solid var(--vg-border) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ─── Star glow accent for key interactive elements ───────────── */
+.vg-glow-btn {
+  box-shadow: 0 0 18px rgba(245, 215, 110, 0.35), 0 4px 20px rgba(245, 215, 110, 0.2) !important;
+}
+
+/* ─── Reveal animation ─────────────────────────────────────────── */
 @keyframes tp-rise {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .tp-rise {
-  animation: tp-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: tp-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Moon shimmer on the header logo ─────────────────────────── */
+@keyframes vg-shimmer {
+  0%, 100% { text-shadow: 0 0 12px rgba(245, 215, 110, 0.6), 0 0 28px rgba(245, 215, 110, 0.3); }
+  50%       { text-shadow: 0 0 20px rgba(245, 215, 110, 0.9), 0 0 40px rgba(245, 215, 110, 0.5); }
+}
+
+.vg-star-glow {
+  animation: vg-shimmer 3.5s ease-in-out infinite;
 }

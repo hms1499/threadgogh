@@ -22,8 +22,6 @@ export default function Home() {
   const [txid, setTxid] = useState<string>();
   const [error, setError] = useState<string>();
   const [thread, setThread] = useState<string[]>([]);
-  // Invoice awaiting redemption: payment sent but result not yet retrieved
-  // (slow confirmation or generation in progress). Drives the recovery path.
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string>();
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
 
@@ -40,10 +38,6 @@ export default function Home() {
     refreshStats();
   }, []);
 
-  // Submit the on-chain proof and retrieve the thread. Reused by the happy path AND
-  // the manual "Check payment" recovery button. Never throws — it resolves to a
-  // recoverable 'recover' state on 402/202 (payment not confirmed yet / still generating)
-  // so the user never sees a hard error while their funds are safely on-chain.
   async function redeem(invoiceId: string, txId?: string) {
     try {
       setError(undefined);
@@ -103,7 +97,6 @@ export default function Home() {
         throw new Error('Transaction reverted on-chain — invoice still valid, you can retry');
       }
       if (status === 'pending') {
-        // Slow confirmation — do NOT error. Hand off to the recovery path.
         setPendingInvoiceId(quote.invoiceId);
         setPhase('recover');
         setError('Confirmation is taking longer than usual. Your invoice is saved — click Check payment once the tx confirms.');
@@ -120,7 +113,7 @@ export default function Home() {
 
   async function toggleWallet() {
     if (address) {
-      disconnectWallet();   // xoa session @stacks/connect, khong chi clear state
+      disconnectWallet();
       setAddress(null);
       return;
     }
@@ -128,34 +121,51 @@ export default function Home() {
   }
 
   return (
-    <main className="tp-shell" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 20px 64px' }}>
+    <main className="tp-shell" style={{ maxWidth: 640, margin: '0 auto', padding: '48px 20px 80px' }}>
+
+      {/* ── Header ── */}
       <Flex className="tp-rise" justify="space-between" align="center" wrap gap={12}>
-        <Title level={2} className="tp-display" style={{ margin: 0, fontWeight: 800 }}>
-          <span style={{ color: '#F7931A' }}>⚡</span> ThreadPay
-        </Title>
+        <Flex align="center" gap={10}>
+          <span className="vg-star-glow" style={{ fontSize: 26, lineHeight: 1 }}>✦</span>
+          <Title
+            level={2}
+            className="tp-display"
+            style={{ margin: 0, fontWeight: 700, color: '#e8eaf6', fontStyle: 'italic' }}
+          >
+            ThreadPay
+          </Title>
+        </Flex>
         <Button
           icon={<WalletOutlined />}
           onClick={toggleWallet}
           className={address ? 'tp-mono' : undefined}
+          style={address ? { borderColor: 'rgba(61,90,173,0.6)', color: '#9fa8d4' } : {}}
         >
           {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect wallet'}
         </Button>
       </Flex>
 
-      <Paragraph type="secondary" className="tp-rise" style={{ marginTop: 12, marginBottom: 28, fontSize: 15 }}>
-        AI writes X threads — pay per generate with STX or sBTC on Stacks. No account, no subscription.
+      <Paragraph
+        className="tp-rise"
+        style={{ marginTop: 10, marginBottom: 32, fontSize: 15, color: '#9fa8d4', animationDelay: '0.04s' }}
+      >
+        AI writes X threads — pay per generate with STX or sBTC on Stacks.{' '}
+        <span style={{ color: 'rgba(159,168,212,0.55)' }}>No account, no subscription.</span>
       </Paragraph>
 
-      <div className="tp-rise" style={{ animationDelay: '0.06s' }}>
+      {/* ── Form ── */}
+      <div className="tp-rise" style={{ animationDelay: '0.08s' }}>
         <ThreadForm onSubmit={handleGenerate} disabled={busy} />
       </div>
 
+      {/* ── Payment status ── */}
       <div style={{ marginTop: 20 }}>
         <PaymentStatus phase={phase} txid={txid} error={error} />
         {phase === 'recover' && pendingInvoiceId && (
           <Button
             type="primary"
             block
+            className="vg-glow-btn"
             style={{ marginTop: 12 }}
             onClick={() => redeem(pendingInvoiceId, txid)}
           >
@@ -164,22 +174,28 @@ export default function Home() {
         )}
       </div>
 
+      {/* ── Generated thread ── */}
       {thread.length > 0 && (
-        <Flex vertical gap={12} className="tp-rise" style={{ marginTop: 28 }}>
+        <Flex vertical gap={12} className="tp-rise" style={{ marginTop: 32 }}>
           <Flex justify="space-between" align="center">
-            <Title level={4} className="tp-display" style={{ margin: 0 }}>
-              Your thread 🧵
+            <Title
+              level={4}
+              className="tp-display"
+              style={{ margin: 0, color: '#f5d76e', fontStyle: 'italic' }}
+            >
+              Your thread
             </Title>
             <Button
               type="text"
               size="small"
               icon={<CopyOutlined />}
+              style={{ color: '#9fa8d4' }}
               onClick={() => {
                 navigator.clipboard.writeText(thread.join('\n\n'));
                 message.success('Whole thread copied');
               }}
             >
-              Copy whole thread
+              Copy all
             </Button>
           </Flex>
           {thread.map((t, i) => (
@@ -188,31 +204,33 @@ export default function Home() {
         </Flex>
       )}
 
-      <div style={{ marginTop: 28 }}>
+      {/* ── History ── */}
+      <div style={{ marginTop: 32 }}>
         <HistoryPanel address={address} onSelect={(t) => { setThread(t); setPhase('done'); }} />
       </div>
 
+      {/* ── Stats ── */}
       {stats && (
         <>
-          <Divider style={{ marginTop: 40, marginBottom: 20 }} />
+          <Divider style={{ marginTop: 48, marginBottom: 20, borderColor: 'rgba(61,90,173,0.3)' }} />
           <Flex gap={32} wrap>
             <Statistic
-              title="Threads sold"
+              title={<span style={{ color: '#6b7bbf', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Threads sold</span>}
               value={stats.threads}
-              styles={{ content: { fontFamily: 'var(--font-display)', color: '#F7931A' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: '#f5d76e' } }}
             />
             <Statistic
-              title="STX revenue"
+              title={<span style={{ color: '#6b7bbf', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>STX revenue</span>}
               value={stats.stxRevenue / 1_000_000}
               suffix="STX"
               precision={2}
-              styles={{ content: { fontFamily: 'var(--font-display)' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: '#e8eaf6' } }}
             />
             <Statistic
-              title="sBTC revenue"
+              title={<span style={{ color: '#6b7bbf', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>sBTC revenue</span>}
               value={stats.sbtcRevenue}
               suffix="sats"
-              styles={{ content: { fontFamily: 'var(--font-display)' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: '#e8eaf6' } }}
             />
           </Flex>
         </>

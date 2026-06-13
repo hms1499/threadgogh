@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { Bricolage_Grotesque, Sora, JetBrains_Mono } from 'next/font/google';
+import { Playfair_Display, Sora, JetBrains_Mono } from 'next/font/google';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { Providers } from './providers';
 import './globals.css';
 
-const display = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-display' });
+const display = Playfair_Display({ subsets: ['latin'], variable: '--font-display', style: ['normal', 'italic'] });
 const sora = Sora({ subsets: ['latin'], variable: '--font-sora' });
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
