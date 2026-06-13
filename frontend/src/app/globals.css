@@ -64,8 +64,8 @@ body::after {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='60'%3E%3Cpath d='M0 15 Q75 8 150 16 Q225 22 300 14' stroke='%236b8fc7' stroke-width='2.5' fill='none' opacity='.18'/%3E%3Cpath d='M0 32 Q60 26 120 34 Q200 40 300 30' stroke='%234a6fa5' stroke-width='2' fill='none' opacity='.14'/%3E%3Cpath d='M0 48 Q80 42 160 50 Q240 55 300 46' stroke='%233d5aad' stroke-width='2' fill='none' opacity='.12'/%3E%3C/svg%3E");
-  background-size: 300px 60px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='360'%3E%3Cpath d='M-20 90 C50 20 110 160 190 90 C270 20 330 160 410 90 C490 20 550 160 630 90' stroke='%236b8fc7' stroke-width='2.6' fill='none' opacity='.2'/%3E%3Cpath d='M-20 230 C60 150 120 310 210 230 C300 150 360 310 450 230 C540 150 600 310 630 230' stroke='%234a6fa5' stroke-width='2.3' fill='none' opacity='.17'/%3E%3Cpath d='M-20 320 C70 255 130 385 220 320 C310 255 370 385 460 320 C545 260 600 380 630 320' stroke='%233d5aad' stroke-width='2.2' fill='none' opacity='.15'/%3E%3Cpath d='M230 150 C230 95 370 95 370 160 C370 215 255 215 265 150 C272 108 333 108 330 158' stroke='%23c9b85e' stroke-width='2' fill='none' opacity='.16'/%3E%3Cpath d='M70 255 C70 218 165 218 165 262 C165 305 90 305 98 258 C103 230 143 230 140 258' stroke='%235a7fc0' stroke-width='1.9' fill='none' opacity='.15'/%3E%3Cpath d='M430 265 C430 225 530 225 530 272 C530 316 448 316 456 264 C461 234 505 234 502 264' stroke='%236b8fc7' stroke-width='1.9' fill='none' opacity='.14'/%3E%3Cpath d='M150 55 C172 32 205 44 214 72 C220 92 198 108 182 96' stroke='%23c9b85e' stroke-width='1.7' fill='none' opacity='.13'/%3E%3Cpath d='M500 120 C525 98 562 110 570 140 C575 162 550 178 535 164' stroke='%235a7fc0' stroke-width='1.7' fill='none' opacity='.12'/%3E%3C/svg%3E");
+  background-size: 600px 360px;
   opacity: 1;
   mix-blend-mode: screen;
 }
@@ -84,6 +84,47 @@ body::after {
 .tp-shell {
   position: relative;
   z-index: 1;
+}
+
+/* ─── Hero banner: the real Starry Night painting ─────────────── */
+.vg-hero {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  min-height: 210px;
+  background-image: url("/starry-night.jpg");
+  background-size: cover;
+  background-position: center 32%;
+  border: 1px solid var(--vg-border);
+  box-shadow: 0 12px 40px rgba(8, 14, 28, 0.6);
+}
+
+/* Scrim: fade the painting into the page so it blends, keep text legible. */
+.vg-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(13, 20, 39, 0.05) 0%, rgba(13, 20, 39, 0.45) 52%, rgba(13, 20, 39, 0.97) 100%),
+    linear-gradient(90deg, rgba(13, 20, 39, 0.55) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.vg-hero__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 210px;
+  padding: 22px;
+}
+
+.vg-hero__wallet {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
 }
 
 /* ─── Van Gogh card ────────────────────────────────────────────── */

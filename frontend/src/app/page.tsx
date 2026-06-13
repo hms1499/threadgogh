@@ -123,35 +123,43 @@ export default function Home() {
   return (
     <main className="tp-shell" style={{ maxWidth: 640, margin: '0 auto', padding: '48px 20px 80px' }}>
 
-      {/* ── Header ── */}
-      <Flex className="tp-rise" justify="space-between" align="center" wrap gap={12}>
-        <Flex align="center" gap={10}>
-          <span className="vg-star-glow" style={{ fontSize: 26, lineHeight: 1 }}>✦</span>
-          <Title
-            level={2}
-            className="tp-display"
-            style={{ margin: 0, fontWeight: 700, color: '#e8eaf6', fontStyle: 'italic' }}
-          >
-            ThreadPay
-          </Title>
-        </Flex>
+      {/* ── Hero: the real Starry Night painting ── */}
+      <div className="vg-hero tp-rise">
         <Button
+          className={`vg-hero__wallet ${address ? 'tp-mono' : ''}`}
           icon={<WalletOutlined />}
           onClick={toggleWallet}
-          className={address ? 'tp-mono' : undefined}
-          style={address ? { borderColor: 'rgba(61,90,173,0.6)', color: '#9fa8d4' } : {}}
+          style={{
+            background: 'rgba(8,14,28,0.55)',
+            borderColor: 'rgba(61,90,173,0.6)',
+            color: address ? '#9fa8d4' : '#e8eaf6',
+            backdropFilter: 'blur(8px)',
+          }}
         >
           {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect wallet'}
         </Button>
-      </Flex>
 
-      <Paragraph
-        className="tp-rise"
-        style={{ marginTop: 10, marginBottom: 32, fontSize: 15, color: '#9fa8d4', animationDelay: '0.04s' }}
-      >
-        AI writes X threads — pay per generate with STX or sBTC on Stacks.{' '}
-        <span style={{ color: 'rgba(159,168,212,0.55)' }}>No account, no subscription.</span>
-      </Paragraph>
+        <div className="vg-hero__content">
+          <Flex align="center" gap={10}>
+            <span className="vg-star-glow" style={{ fontSize: 26, lineHeight: 1 }}>✦</span>
+            <Title
+              level={1}
+              className="tp-display"
+              style={{ margin: 0, fontWeight: 700, fontStyle: 'italic', color: '#fdfcf7', fontSize: 38 }}
+            >
+              ThreadPay
+            </Title>
+          </Flex>
+          <Paragraph
+            style={{ margin: '8px 0 0', fontSize: 15, color: '#cdd3ee', maxWidth: 440 }}
+          >
+            AI writes X threads — pay per generate with STX or sBTC on Stacks.{' '}
+            <span style={{ color: 'rgba(205,211,238,0.6)' }}>No account, no subscription.</span>
+          </Paragraph>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 28 }} />
 
       {/* ── Form ── */}
       <div className="tp-rise" style={{ animationDelay: '0.08s' }}>
