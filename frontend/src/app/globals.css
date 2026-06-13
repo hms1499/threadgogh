@@ -61,13 +61,22 @@ body::before {
 body::after {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -90px;
   z-index: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='360'%3E%3Cpath d='M-20 90 C50 20 110 160 190 90 C270 20 330 160 410 90 C490 20 550 160 630 90' stroke='%236b8fc7' stroke-width='2.6' fill='none' opacity='.2'/%3E%3Cpath d='M-20 230 C60 150 120 310 210 230 C300 150 360 310 450 230 C540 150 600 310 630 230' stroke='%234a6fa5' stroke-width='2.3' fill='none' opacity='.17'/%3E%3Cpath d='M-20 320 C70 255 130 385 220 320 C310 255 370 385 460 320 C545 260 600 380 630 320' stroke='%233d5aad' stroke-width='2.2' fill='none' opacity='.15'/%3E%3Cpath d='M230 150 C230 95 370 95 370 160 C370 215 255 215 265 150 C272 108 333 108 330 158' stroke='%23c9b85e' stroke-width='2' fill='none' opacity='.16'/%3E%3Cpath d='M70 255 C70 218 165 218 165 262 C165 305 90 305 98 258 C103 230 143 230 140 258' stroke='%235a7fc0' stroke-width='1.9' fill='none' opacity='.15'/%3E%3Cpath d='M430 265 C430 225 530 225 530 272 C530 316 448 316 456 264 C461 234 505 234 502 264' stroke='%236b8fc7' stroke-width='1.9' fill='none' opacity='.14'/%3E%3Cpath d='M150 55 C172 32 205 44 214 72 C220 92 198 108 182 96' stroke='%23c9b85e' stroke-width='1.7' fill='none' opacity='.13'/%3E%3Cpath d='M500 120 C525 98 562 110 570 140 C575 162 550 178 535 164' stroke='%235a7fc0' stroke-width='1.7' fill='none' opacity='.12'/%3E%3C/svg%3E");
-  background-size: 600px 360px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='960' preserveAspectRatio='xMidYMid slice'%3E%3Cpath d='M-50 150 C150 40 300 260 480 150 C660 40 810 260 990 150 C1170 40 1320 260 1490 150' stroke='%236b8fc7' stroke-width='3' fill='none' opacity='.26'/%3E%3Cpath d='M-50 480 C160 360 320 600 500 480 C680 360 840 600 1020 480 C1200 360 1360 600 1490 480' stroke='%234a6fa5' stroke-width='2.8' fill='none' opacity='.22'/%3E%3Cpath d='M-50 790 C170 670 330 910 520 790 C710 670 870 910 1060 790 C1250 670 1400 910 1490 790' stroke='%233d5aad' stroke-width='2.6' fill='none' opacity='.2'/%3E%3Cpath d='M250 360 C250 250 540 250 540 380 C540 490 300 490 320 360 C332 285 470 285 458 366' stroke='%23c9b85e' stroke-width='2.6' fill='none' opacity='.24'/%3E%3Cpath d='M930 300 C930 195 1200 195 1200 320 C1200 425 970 425 988 305 C999 235 1130 235 1120 312' stroke='%235a7fc0' stroke-width='2.4' fill='none' opacity='.22'/%3E%3Cpath d='M650 650 C650 548 920 548 920 668 C920 770 690 770 708 655 C719 588 845 588 836 662' stroke='%236b8fc7' stroke-width='2.4' fill='none' opacity='.2'/%3E%3Cpath d='M110 720 C110 632 340 632 340 735 C340 822 150 822 165 725 C174 668 285 668 278 730' stroke='%235a7fc0' stroke-width='2.2' fill='none' opacity='.19'/%3E%3Cpath d='M1090 730 C1090 645 1300 645 1300 742 C1300 825 1120 825 1134 732 C1142 678 1248 678 1242 736' stroke='%23c9b85e' stroke-width='2.2' fill='none' opacity='.19'/%3E%3Cpath d='M470 150 C470 100 600 100 600 158 C600 205 500 205 512 152' stroke='%235a7fc0' stroke-width='1.9' fill='none' opacity='.17'/%3E%3Cpath d='M850 470 C850 425 960 425 960 478 C960 520 875 520 884 472' stroke='%23c9b85e' stroke-width='1.9' fill='none' opacity='.17'/%3E%3Cpath d='M380 560 C380 515 490 515 490 568 C490 612 405 612 414 562' stroke='%236b8fc7' stroke-width='1.8' fill='none' opacity='.16'/%3E%3Cpath d='M120 80 C160 40 230 55 245 110 C254 145 215 168 185 150' stroke='%23c9b85e' stroke-width='1.8' fill='none' opacity='.16'/%3E%3Cpath d='M1250 120 C1290 80 1360 95 1375 150' stroke='%235a7fc0' stroke-width='1.7' fill='none' opacity='.14'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
   opacity: 1;
   mix-blend-mode: screen;
+  animation: vg-sky-flow 90s ease-in-out infinite alternate;
+}
+
+/* Gió thổi rất chậm qua bầu trời — cả lớp xoáy trôi nhẹ, không lặp tile. */
+@keyframes vg-sky-flow {
+  from { transform: translate(0, 0) scale(1.02); }
+  to   { transform: translate(26px, 16px) scale(1.05); }
 }
 
 /* ─── Typography utilities ─────────────────────────────────────── */
@@ -158,4 +167,14 @@ body::after {
 
 .vg-star-glow {
   animation: vg-shimmer 3.5s ease-in-out infinite;
+}
+
+/* ─── Respect reduced-motion preference ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after,
+  .vg-star-glow,
+  .tp-rise {
+    animation: none !important;
+  }
 }
