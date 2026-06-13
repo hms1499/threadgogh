@@ -194,6 +194,22 @@ body::after {
   opacity: 0.85;
 }
 
+/* ─── Gallery placard — stats over a Sunflowers canvas ────────── */
+.vg-gallery {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(232, 144, 10, 0.3);
+  padding: 20px 22px;
+  background-color: rgba(13, 26, 62, 0.85);
+  background-image:
+    linear-gradient(100deg, rgba(11, 18, 36, 0.97) 36%, rgba(11, 18, 36, 0.6) 56%, rgba(11, 18, 36, 0.15) 100%),
+    url("/sunflowers.jpg");
+  background-size: cover, cover;
+  background-position: center, right 30%;
+  background-repeat: no-repeat, no-repeat;
+}
+
 /* ─── Star glow accent for key interactive elements ───────────── */
 .vg-glow-btn {
   box-shadow: 0 0 18px rgba(245, 215, 110, 0.35), 0 4px 20px rgba(245, 215, 110, 0.2) !important;

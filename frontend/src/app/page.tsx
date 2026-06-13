@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button, Typography, Flex, Statistic, Divider, App } from 'antd';
+import { Button, Typography, Flex, Statistic, App } from 'antd';
 import { WalletOutlined, CopyOutlined } from '@ant-design/icons';
 import { ThreadForm, type FormValues } from '@/components/ThreadForm';
 import { TweetCard } from '@/components/TweetCard';
@@ -9,7 +9,7 @@ import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 
 type Quote = {
   invoiceId: string; priceStx: number; priceSbtc: number; expiresAt: string;
@@ -217,31 +217,33 @@ export default function Home() {
         <HistoryPanel address={address} onSelect={(t) => { setThread(t); setPhase('done'); }} />
       </div>
 
-      {/* ── Stats ── */}
+      {/* ── Stats — gallery placard with Sunflowers ── */}
       {stats && (
-        <>
-          <Divider style={{ marginTop: 48, marginBottom: 20, borderColor: 'rgba(61,90,173,0.3)' }} />
+        <div className="vg-gallery tp-rise" style={{ marginTop: 48 }}>
+          <Text className="vg-plate" style={{ display: 'block', marginBottom: 16 }}>
+            The ThreadPay Collection
+          </Text>
           <Flex gap={32} wrap>
             <Statistic
-              title={<span style={{ color: '#6b7bbf', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Threads sold</span>}
+              title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Threads sold</span>}
               value={stats.threads}
               styles={{ content: { fontFamily: 'var(--font-display)', color: '#f5d76e' } }}
             />
             <Statistic
-              title={<span style={{ color: '#6b7bbf', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>STX revenue</span>}
+              title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>STX revenue</span>}
               value={stats.stxRevenue / 1_000_000}
               suffix="STX"
               precision={2}
-              styles={{ content: { fontFamily: 'var(--font-display)', color: '#e8eaf6' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: '#f0eee8' } }}
             />
             <Statistic
-              title={<span style={{ color: '#6b7bbf', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>sBTC revenue</span>}
+              title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>sBTC revenue</span>}
               value={stats.sbtcRevenue}
               suffix="sats"
-              styles={{ content: { fontFamily: 'var(--font-display)', color: '#e8eaf6' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: '#f0eee8' } }}
             />
           </Flex>
-        </>
+        </div>
       )}
     </main>
   );
