@@ -8,10 +8,25 @@ const display = Playfair_Display({ subsets: ['latin'], variable: '--font-display
 const sora = Sora({ subsets: ['latin'], variable: '--font-sora' });
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
+const TITLE = 'ThreadPay — AI threads, pay per generate with Bitcoin';
+const DESCRIPTION =
+  'AI writes X threads — pay per generate with STX or sBTC on Stacks. No account, no subscription.';
+
 export const metadata: Metadata = {
-  title: 'ThreadPay — AI threads, pay per generate with Bitcoin',
-  description:
-    'AI writes X threads — pay per generate with STX or sBTC on Stacks. No account, no subscription.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    type: 'website',
+    siteName: 'ThreadPay',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
