@@ -7,6 +7,7 @@ import { ThreadForm, type FormValues } from '@/components/ThreadForm';
 import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { HistoryPanel } from '@/components/HistoryPanel';
+import { EmptyGallery } from '@/components/EmptyGallery';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
 
 const { Title, Paragraph, Text } = Typography;
@@ -211,6 +212,9 @@ export default function Home() {
           ))}
         </Flex>
       )}
+
+      {/* ── Empty state — before the first generation ── */}
+      {thread.length === 0 && phase === 'idle' && <EmptyGallery />}
 
       {/* ── History ── */}
       <div style={{ marginTop: 32 }}>
