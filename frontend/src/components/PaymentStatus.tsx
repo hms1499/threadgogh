@@ -3,6 +3,12 @@
 import { Steps, Alert, Typography, Flex } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
 import { STACKS_NETWORK } from '@/lib/config';
+import { VanGoghLoader } from './VanGoghLoader';
+
+const LOADER_LABEL: Partial<Record<Phase, string>> = {
+  quoting:    'Requesting a quote…',
+  generating: 'Painting your thread…',
+};
 
 export type Phase =
   | 'idle' | 'quoting' | 'awaiting-signature'
@@ -37,6 +43,10 @@ export function PaymentStatus({ phase, txid, error }: {
       style={{ borderRadius: 12, padding: '16px 18px' }}
     >
       <Flex vertical gap={14}>
+        {(phase === 'quoting' || phase === 'generating') && (
+          <VanGoghLoader label={LOADER_LABEL[phase]} />
+        )}
+
         {phase === 'error' ? (
           <Alert type="error" showIcon message={error ?? 'Something went wrong'} />
         ) : phase === 'recover' ? (

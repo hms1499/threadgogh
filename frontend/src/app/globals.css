@@ -172,12 +172,61 @@ body::after {
   animation: vg-shimmer 3.5s ease-in-out infinite;
 }
 
+/* ─── "Painting your thread" loader — swirling night sky ──────── */
+@keyframes vg-spin     { to { transform: rotate(360deg); } }
+@keyframes vg-spin-rev { to { transform: rotate(-360deg); } }
+@keyframes vg-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.7); }
+  50%      { opacity: 1;   transform: scale(1.25); }
+}
+@keyframes vg-trace {
+  0%   { stroke-dashoffset: 480; opacity: 0.2; }
+  50%  { opacity: 1; }
+  100% { stroke-dashoffset: 0;   opacity: 0.2; }
+}
+
+.vg-loader__swirl-out {
+  transform-box: view-box;
+  transform-origin: 60px 60px;
+  animation: vg-spin 9s linear infinite;
+}
+.vg-loader__swirl-in {
+  transform-box: view-box;
+  transform-origin: 60px 60px;
+  animation: vg-spin-rev 6s linear infinite;
+}
+.vg-loader__trace {
+  stroke-dasharray: 480;
+  animation: vg-trace 2.8s ease-in-out infinite;
+}
+.vg-loader__star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: vg-twinkle 1.9s ease-in-out infinite;
+}
+.vg-loader__star:nth-of-type(2) { animation-delay: 0.5s; }
+.vg-loader__star:nth-of-type(3) { animation-delay: 1.0s; }
+.vg-loader__star:nth-of-type(4) { animation-delay: 1.4s; }
+
+@keyframes vg-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+.vg-loader__caption {
+  animation: vg-pulse 2.2s ease-in-out infinite;
+}
+
 /* ─── Respect reduced-motion preference ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   body::before,
   body::after,
   .vg-star-glow,
-  .tp-rise {
+  .tp-rise,
+  .vg-loader__swirl-out,
+  .vg-loader__swirl-in,
+  .vg-loader__trace,
+  .vg-loader__star,
+  .vg-loader__caption {
     animation: none !important;
   }
 }
