@@ -26,10 +26,10 @@ const PHASE_STEP: Record<Phase, number> = {
 };
 
 const STEP_ITEMS = [
-  { title: 'Quote',    description: 'HTTP 402' },
-  { title: 'Sign',     description: 'Wallet' },
-  { title: 'Confirm',  description: 'On-chain' },
-  { title: 'Generate', description: 'AI' },
+  { title: 'Quote',    content: 'HTTP 402' },
+  { title: 'Sign',     content: 'Wallet' },
+  { title: 'Confirm',  content: 'On-chain' },
+  { title: 'Generate', content: 'AI' },
 ];
 
 export function PaymentStatus({ phase, txid, error }: {
@@ -48,9 +48,9 @@ export function PaymentStatus({ phase, txid, error }: {
         )}
 
         {phase === 'error' ? (
-          <Alert type="error" showIcon message={error ?? 'Something went wrong'} />
+          <Alert type="error" showIcon title={error ?? 'Something went wrong'} />
         ) : phase === 'recover' ? (
-          <Alert type="warning" showIcon message={error ?? 'Payment is still confirming — your invoice is saved.'} />
+          <Alert type="warning" showIcon title={error ?? 'Payment is still confirming — your invoice is saved.'} />
         ) : (
           <Steps
             size="small"
