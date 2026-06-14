@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Typography, Flex, Statistic, App } from 'antd';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { WalletOutlined, CopyOutlined } from '@ant-design/icons';
 import { ThreadForm, type FormValues } from '@/components/ThreadForm';
 import { TweetCard } from '@/components/TweetCard';
@@ -25,6 +26,7 @@ export default function Home() {
   const [thread, setThread] = useState<string[]>([]);
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string>();
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
+  const threadRef = useRef<HTMLDivElement>(null);
 
   function refreshStats() {
     fetch('/api/stats')
@@ -38,6 +40,17 @@ export default function Home() {
     setAddress(getAddress());
     refreshStats();
   }, []);
+
+  // When a fresh thread finishes, bring it into view so the result isn't
+  // stranded below the fold. Respects reduced-motion.
+  useEffect(() => {
+    if (phase !== 'done' || thread.length === 0 || !threadRef.current) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    threadRef.current.scrollIntoView({
+      behavior: reduce ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }, [phase, thread]);
 
   async function redeem(invoiceId: string, txId?: string) {
     try {
@@ -185,8 +198,8 @@ export default function Home() {
 
       {/* ── Generated thread ── */}
       {thread.length > 0 && (
-        <Flex vertical gap={12} className="tp-rise" style={{ marginTop: 32 }}>
-          <Flex justify="space-between" align="center">
+        <Flex ref={threadRef} vertical gap={12} style={{ marginTop: 32, scrollMarginTop: 24 }}>
+          <Flex justify="space-between" align="center" className="tp-rise">
             <Title
               level={4}
               className="tp-display"
@@ -231,19 +244,21 @@ export default function Home() {
             <Statistic
               title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Threads sold</span>}
               value={stats.threads}
+              formatter={(val) => <AnimatedCounter value={Number(val)} format={(n) => String(Math.round(n))} />}
               styles={{ content: { fontFamily: 'var(--font-display)', color: '#f5d76e' } }}
             />
             <Statistic
               title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>STX revenue</span>}
               value={stats.stxRevenue / 1_000_000}
               suffix="STX"
-              precision={2}
+              formatter={(val) => <AnimatedCounter value={Number(val)} format={(n) => n.toFixed(2)} />}
               styles={{ content: { fontFamily: 'var(--font-display)', color: '#f0eee8' } }}
             />
             <Statistic
               title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>sBTC revenue</span>}
               value={stats.sbtcRevenue}
               suffix="sats"
+              formatter={(val) => <AnimatedCounter value={Number(val)} format={(n) => Math.round(n).toLocaleString()} />}
               styles={{ content: { fontFamily: 'var(--font-display)', color: '#f0eee8' } }}
             />
           </Flex>
