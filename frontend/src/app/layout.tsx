@@ -27,6 +27,12 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
   },
+  // Domain/project ownership verification (TalentApp). Renders as
+  // <meta name="talentapp:project_verification" content="…"> in <head>.
+  other: {
+    'talentapp:project_verification':
+      'daf45ef9fa39647a8907f0a9204a8eb8a48064643051c6ac6eb988e71b580f5ece5b4590414629ffc4dd24fe3e1d1f9f7fab2181209258c82e80fda993f6ecd4',
+  },
 };
 
 export default function RootLayout({
