@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { List, Typography, Tag, Flex } from 'antd';
+import { Typography, Tag, Flex } from 'antd';
 
 const { Text } = Typography;
 
@@ -32,36 +32,41 @@ export function HistoryPanel({ address, onSelect }: {
 
   if (!address || items.length === 0) return null;
 
+  // antd v6 deprecated <List>; this is a plain Flex composition with a
+  // clickable, keyboard-operable row per thread.
   return (
     <Flex vertical gap={10}>
       <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Your threads
       </Text>
-      <List
-        size="small"
-        dataSource={items}
-        renderItem={(it) => (
-          <List.Item
+      <Flex vertical gap={2}>
+        {items.map((it) => (
+          <div
+            key={it.invoice_id}
             className="vg-history-item"
+            role="button"
+            tabIndex={0}
             onClick={() => onSelect(it.thread_content)}
-            style={{ cursor: 'pointer', paddingInline: 8 }}
-          >
-            <List.Item.Meta
-              title={<Text>{it.invoices?.topic ?? '(unknown topic)'}</Text>}
-              description={
-                <Flex gap={8} align="center">
-                  <Tag className="tp-mono" bordered={false} color={it.token === 'SBTC' ? 'gold' : 'default'}>
-                    {it.token}
-                  </Tag>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {new Date(it.created_at).toLocaleString()}
-                  </Text>
-                </Flex>
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(it.thread_content);
               }
-            />
-          </List.Item>
-        )}
-      />
+            }}
+            style={{ cursor: 'pointer', padding: '10px 8px' }}
+          >
+            <Text style={{ display: 'block' }}>{it.invoices?.topic ?? '(unknown topic)'}</Text>
+            <Flex gap={8} align="center" style={{ marginTop: 4 }}>
+              <Tag className="tp-mono" variant="filled" color={it.token === 'SBTC' ? 'gold' : 'default'}>
+                {it.token}
+              </Tag>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {new Date(it.created_at).toLocaleString()}
+              </Text>
+            </Flex>
+          </div>
+        ))}
+      </Flex>
     </Flex>
   );
 }

@@ -65,10 +65,6 @@ const themeConfig: ThemeConfig = {
       hoverBorderColor: 'rgba(245, 215, 110, 0.5)',
       activeBorderColor: STAR_GOLD,
     },
-    List: {
-      paddingContentVertical: 12,
-      colorSplit:             'rgba(61, 90, 173, 0.2)',
-    },
     Alert: {
       colorInfoBg:     'rgba(37, 61, 138, 0.3)',
       colorInfoBorder: 'rgba(61, 90, 173, 0.5)',
