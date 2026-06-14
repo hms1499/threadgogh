@@ -31,9 +31,9 @@ export function EmptyGallery() {
               fill="none" stroke="#6b8fc7" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
         <path d="M76 73 C76 69 85 69 85 74"
               fill="none" stroke="#f5d76e" strokeWidth="1.6" strokeLinecap="round" opacity="0.7" />
-        <circle cx="100" cy="58" r="2.2" fill="#f7e190" />
-        <circle cx="57" cy="61" r="1.4" fill="#f5d76e" />
-        <circle cx="102" cy="86" r="1.4" fill="#f5d76e" opacity="0.8" />
+        <circle className="vg-easel-star" cx="100" cy="58" r="2.2" fill="#f7e190" />
+        <circle className="vg-easel-star" cx="57" cy="61" r="1.4" fill="#f5d76e" />
+        <circle className="vg-easel-star" cx="102" cy="86" r="1.4" fill="#f5d76e" opacity="0.8" />
       </svg>
 
       <Text className="tp-display" style={{ color: '#c9b85e', fontStyle: 'italic', fontSize: 17 }}>

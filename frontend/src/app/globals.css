@@ -103,11 +103,28 @@ body::after {
   border-radius: 18px;
   overflow: hidden;
   min-height: 210px;
+  border: 1px solid var(--vg-border);
+  box-shadow: 0 12px 40px rgba(8, 14, 28, 0.6);
+}
+
+/* Painting layer — slow ken-burns drift so the Starry Night sky breathes.
+   Lives on its own layer (clipped by overflow:hidden) so the transform never
+   touches the hero content or the scrim above it. */
+.vg-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   background-image: url("/starry-night.jpg");
   background-size: cover;
   background-position: center 32%;
-  border: 1px solid var(--vg-border);
-  box-shadow: 0 12px 40px rgba(8, 14, 28, 0.6);
+  transform-origin: 60% 40%;
+  animation: vg-kenburns 34s ease-in-out infinite alternate;
+}
+
+@keyframes vg-kenburns {
+  from { transform: scale(1.02) translate(0, 0); }
+  to   { transform: scale(1.10) translate(-1.5%, -1.2%); }
 }
 
 /* Scrim: fade the painting into the page so it blends, keep text legible. */
@@ -319,12 +336,23 @@ body::after {
   animation: vg-pulse 2.2s ease-in-out infinite;
 }
 
+/* ─── Empty easel — stars waiting on the canvas gently twinkle ─── */
+.vg-easel-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: vg-twinkle 2.6s ease-in-out infinite;
+}
+.vg-easel-star:nth-of-type(2) { animation-delay: 0.7s; }
+.vg-easel-star:nth-of-type(3) { animation-delay: 1.3s; }
+
 /* ─── Respect reduced-motion preference ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   body::before,
   body::after,
+  .vg-hero::before,
   .vg-star-glow,
   .tp-rise,
+  .vg-easel-star,
   .vg-loader__swirl-out,
   .vg-loader__swirl-in,
   .vg-loader__trace,
