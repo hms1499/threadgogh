@@ -215,6 +215,46 @@ body::after {
   box-shadow: 0 0 18px rgba(245, 215, 110, 0.35), 0 4px 20px rgba(245, 215, 110, 0.2) !important;
 }
 
+/* ─── Focus-visible ring — keyboard navigation accessibility ──── */
+*:focus-visible {
+  outline: 2px solid var(--vg-star);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ─── Over-limit frame — a tweet past 280 chars glows warning-red ─ */
+.vg-frame--over {
+  background:
+    linear-gradient(135deg, #b85a52 0%, #7a3a34 26%, #c47068 50%, #6f342e 74%, #b05a52 100%);
+}
+.vg-frame--over,
+.vg-frame--over:hover {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 230, 225, 0.18),
+    inset 0 0 6px rgba(90, 30, 26, 0.5),
+    0 8px 24px rgba(8, 14, 28, 0.5),
+    0 0 18px rgba(229, 115, 115, 0.4);
+}
+
+/* ─── Hover feedback — wallet pill + history rows ─────────────── */
+.vg-wallet-btn {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s;
+}
+.vg-wallet-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(245, 215, 110, 0.3);
+}
+
+.vg-history-item {
+  border-radius: 8px;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.vg-history-item:hover {
+  background-color: rgba(37, 61, 138, 0.28);
+  transform: translateX(3px);
+  box-shadow: inset 2px 0 0 var(--vg-star);
+}
+
 /* ─── Reveal animation ─────────────────────────────────────────── */
 @keyframes tp-rise {
   from { opacity: 0; transform: translateY(14px); }

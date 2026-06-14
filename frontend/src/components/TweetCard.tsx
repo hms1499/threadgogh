@@ -14,7 +14,7 @@ export function TweetCard({ text, index, total }: {
   // Each painting "hangs" a beat after the previous one — gallery-style stagger.
   return (
     <div className="tp-rise" style={{ animationDelay: `${index * 0.09}s` }}>
-      <div className="vg-frame">
+      <div className={`vg-frame${over ? ' vg-frame--over' : ''}`}>
       <div className="vg-frame__canvas">
         {/* Museum plate label + character counter */}
         <Flex justify="space-between" align="center" style={{ marginBottom: 10 }}>
@@ -25,7 +25,7 @@ export function TweetCard({ text, index, total }: {
             className="tp-mono"
             style={{
               fontSize: 11,
-              color: over ? '#e57373' : '#6b7bbf',
+              color: over ? '#e57373' : '#8593cf',
               background: over ? 'rgba(229,115,115,0.1)' : 'rgba(37,61,138,0.25)',
               padding: '2px 8px',
               borderRadius: 6,
@@ -55,7 +55,7 @@ export function TweetCard({ text, index, total }: {
             size="small"
             type="text"
             icon={<CopyOutlined />}
-            style={{ color: '#6b7bbf', fontSize: 12 }}
+            style={{ color: '#8593cf', fontSize: 12 }}
             onClick={async () => {
               await navigator.clipboard.writeText(text);
               message.success('Tweet copied');

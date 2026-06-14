@@ -140,7 +140,7 @@ export default function Home() {
       {/* ── Hero: the real Starry Night painting ── */}
       <div className="vg-hero tp-rise">
         <Button
-          className={`vg-hero__wallet ${address ? 'tp-mono' : ''}`}
+          className={`vg-hero__wallet vg-wallet-btn ${address ? 'tp-mono' : ''}`}
           icon={<WalletOutlined />}
           onClick={toggleWallet}
           style={{

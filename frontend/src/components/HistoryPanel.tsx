@@ -42,8 +42,9 @@ export function HistoryPanel({ address, onSelect }: {
         dataSource={items}
         renderItem={(it) => (
           <List.Item
+            className="vg-history-item"
             onClick={() => onSelect(it.thread_content)}
-            style={{ cursor: 'pointer', paddingInline: 4 }}
+            style={{ cursor: 'pointer', paddingInline: 8 }}
           >
             <List.Item.Meta
               title={<Text>{it.invoices?.topic ?? '(unknown topic)'}</Text>}
