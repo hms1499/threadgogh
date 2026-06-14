@@ -79,7 +79,11 @@ async function callLlm(config: LlmConfig, system: string, user: string): Promise
       body: JSON.stringify({
         system_instruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: { maxOutputTokens: 2000, temperature: 0.8 },
+        generationConfig: {
+          maxOutputTokens: 2000,
+          temperature: 0.8,
+          responseMimeType: 'application/json',
+        },
       }),
     });
     if (!res.ok) throw new Error(`Gemini API ${res.status}: ${await res.text()}`);
@@ -98,6 +102,11 @@ async function callLlm(config: LlmConfig, system: string, user: string): Promise
       model: config.model,
       max_tokens: 2000,
       temperature: 0.8,
+      // Groq & OpenRouter support OpenAI JSON mode; it forces syntactically valid
+      // JSON. Ollama doesn't, and rejects unknown fields, so skip it there.
+      ...(config.provider === 'groq' || config.provider === 'openrouter'
+        ? { response_format: { type: 'json_object' } }
+        : {}),
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -108,18 +117,60 @@ async function callLlm(config: LlmConfig, system: string, user: string): Promise
   return extractText(config.provider, await res.json());
 }
 
+// Pull the first balanced JSON value (array or object) out of surrounding prose,
+// respecting string literals so brackets inside text don't trip the scan.
+function extractJsonSlice(s: string): string | null {
+  const start = s.search(/[[{]/);
+  if (start === -1) return null;
+  const open = s[start];
+  const close = open === '[' ? ']' : '}';
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === open) depth++;
+    else if (ch === close && --depth === 0) return s.slice(start, i + 1);
+  }
+  return null;
+}
+
 export function parseThreadJson(raw: string): string[] {
-  const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/```\s*$/m, '').trim();
+  const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
+
+  // LLMs often wrap the JSON in prose ("Sure! Here is..."). Try a direct parse
+  // first, then fall back to extracting the first balanced JSON value.
   let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new Error('LLM output is not valid JSON');
+    const slice = extractJsonSlice(cleaned);
+    if (slice === null) throw new Error('LLM output is not valid JSON');
+    try {
+      parsed = JSON.parse(slice);
+    } catch {
+      throw new Error('LLM output is not valid JSON');
+    }
   }
-  if (!Array.isArray(parsed) || !parsed.every((t) => typeof t === 'string')) {
+
+  // Accept an object wrapper like {"tweets":[...]} / {"thread":[...]} — what
+  // JSON-mode responses return — as well as a bare array.
+  let arr: unknown = parsed;
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    const obj = parsed as Record<string, unknown>;
+    arr = obj.tweets ?? obj.thread ?? obj.items
+      ?? Object.values(obj).find((v) => Array.isArray(v));
+  }
+
+  if (!Array.isArray(arr) || !arr.every((t) => typeof t === 'string')) {
     throw new Error('LLM output is not a JSON array of strings');
   }
-  return parsed.map((t: string) =>
+  return arr.map((t: string) =>
     t.length > 280 ? `${t.slice(0, 277)}...` : t,
   );
 }
@@ -135,7 +186,7 @@ export async function generateThread(
   }
   const system = [
     'You are an expert X (Twitter) thread writer.',
-    'Return ONLY a JSON array of strings — one string per tweet.',
+    'Return ONLY a JSON object of the form {"tweets": ["...", "..."]} — one string per tweet.',
     'No markdown fences, no commentary, no numbering prefixes.',
     'Each tweet must be under 270 characters.',
     'Tweet 1 must be a strong hook. The last tweet wraps up with a takeaway or CTA.',

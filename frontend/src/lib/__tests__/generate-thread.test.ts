@@ -21,6 +21,21 @@ describe('parseThreadJson', () => {
     expect(() => parseThreadJson('{"a":1}')).toThrow();
     expect(() => parseThreadJson('not json')).toThrow();
   });
+
+  it('unwraps an object wrapper like {"tweets":[...]}', () => {
+    expect(parseThreadJson('{"tweets":["a","b"]}')).toEqual(['a', 'b']);
+    expect(parseThreadJson('{"thread":["x"]}')).toEqual(['x']);
+  });
+
+  it('extracts the JSON array from surrounding prose', () => {
+    const raw = 'Sure! Here is your thread:\n["one", "two"]\nHope that helps!';
+    expect(parseThreadJson(raw)).toEqual(['one', 'two']);
+  });
+
+  it('extracts a JSON object wrapper from surrounding prose', () => {
+    const raw = 'Here you go:\n```json\n{"tweets": ["a", "b"]}\n```\nEnjoy';
+    expect(parseThreadJson(raw)).toEqual(['a', 'b']);
+  });
 });
 
 describe('resolveLlmConfig', () => {
