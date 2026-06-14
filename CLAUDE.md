@@ -95,3 +95,5 @@ Things to never change or assume without explicit reason:
   state machine, atomic locks, stale-lock recovery, migrations.
 - [`.claude/docs/llm-providers.md`](.claude/docs/llm-providers.md) — provider abstraction,
   env config, output contract and parsing.
+- [`.claude/docs/mainnet-deploy.md`](.claude/docs/mainnet-deploy.md) — ordered mainnet
+  runbook: deploy without mock-sbtc, set-sbtc-contract, RLS, env switch, smoke test.
