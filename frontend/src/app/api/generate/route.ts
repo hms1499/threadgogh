@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 });
   }
 
+  try {
   // ── Branch 1: no proof yet → return a quote (HTTP 402) ──
   if (!body.invoiceId) {
     const topic = typeof body.topic === 'string' ? body.topic.trim() : '';
@@ -123,4 +124,14 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ thread: gen.thread_content, invoiceId: invoice.invoice_id });
+  } catch (e) {
+    // Unwrapped failures (DB, on-chain read, parsing) would otherwise surface as
+    // an opaque 500 logged only server-side. Log with context and return the real
+    // message so the client can show it.
+    console.error('[generate] unhandled error:', e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'internal server error' },
+      { status: 500 },
+    );
+  }
 }
