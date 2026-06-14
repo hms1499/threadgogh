@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Typography, Button, Flex, App } from 'antd';
-import { CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined, CheckOutlined } from '@ant-design/icons';
 
 const { Paragraph, Text } = Typography;
 
@@ -9,6 +10,7 @@ export function TweetCard({ text, index, total }: {
   text: string; index: number; total: number;
 }) {
   const { message } = App.useApp();
+  const [copied, setCopied] = useState(false);
   const over = text.length > 280;
 
   // Each painting "hangs" a beat after the previous one — gallery-style stagger.
@@ -54,14 +56,16 @@ export function TweetCard({ text, index, total }: {
           <Button
             size="small"
             type="text"
-            icon={<CopyOutlined />}
-            style={{ color: '#8593cf', fontSize: 12 }}
+            icon={copied ? <CheckOutlined /> : <CopyOutlined />}
+            style={{ color: copied ? '#7bc67e' : '#8593cf', fontSize: 12 }}
             onClick={async () => {
               await navigator.clipboard.writeText(text);
               message.success('Tweet copied');
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1400);
             }}
           >
-            Copy
+            {copied ? 'Copied' : 'Copy'}
           </Button>
         </Flex>
       </div>

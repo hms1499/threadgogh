@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Typography, Flex, Statistic, App } from 'antd';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
-import { WalletOutlined, CopyOutlined } from '@ant-design/icons';
+import { WalletOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons';
 import { ThreadForm, type FormValues } from '@/components/ThreadForm';
 import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
@@ -26,6 +26,7 @@ export default function Home() {
   const [thread, setThread] = useState<string[]>([]);
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string>();
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
+  const [copiedAll, setCopiedAll] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
   function refreshStats() {
@@ -210,14 +211,16 @@ export default function Home() {
             <Button
               type="text"
               size="small"
-              icon={<CopyOutlined />}
-              style={{ color: '#9fa8d4' }}
+              icon={copiedAll ? <CheckOutlined /> : <CopyOutlined />}
+              style={{ color: copiedAll ? '#7bc67e' : '#9fa8d4' }}
               onClick={() => {
                 navigator.clipboard.writeText(thread.join('\n\n'));
                 message.success('Whole thread copied');
+                setCopiedAll(true);
+                setTimeout(() => setCopiedAll(false), 1400);
               }}
             >
-              Copy all
+              {copiedAll ? 'Copied' : 'Copy all'}
             </Button>
           </Flex>
           {thread.map((t, i) => (
