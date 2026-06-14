@@ -39,7 +39,7 @@ export function EmptyGallery() {
       <Text className="tp-display" style={{ color: '#c9b85e', fontStyle: 'italic', fontSize: 17 }}>
         An empty canvas
       </Text>
-      <Text style={{ color: '#6b7bbf', fontSize: 14, textAlign: 'center', maxWidth: 320 }}>
+      <Text style={{ color: '#8593cf', fontSize: 14, textAlign: 'center', maxWidth: 320 }}>
         Generate your first thread — it&apos;ll hang here as a framed painting.
       </Text>
     </Flex>
