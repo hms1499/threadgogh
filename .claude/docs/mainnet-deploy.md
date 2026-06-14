@@ -78,10 +78,19 @@ The deployer key is owner + treasury (controls prices, treasury, sbtc-contract).
 Keep the mnemonic offline. Consider `set-treasury` to move payouts to a separate
 cold wallet, leaving only admin on the deployer.
 
+## Sign-in-with-Stacks smoke test (history auth)
+`/api/history` is now gated by a wallet signature (`POST` with
+`{address, message, signature}`, verified in `lib/auth.ts`). The server
+reconstructs the Stacks plain-message hash to recover the signer — that hash
+format is the long-standing standard, but it can only be confirmed against a
+real wallet. During step 7, click **"Sign in to view your history"**, approve
+the (free, no-fee) signature in Leather/Xverse, and confirm your threads load.
+If they don't, the signature path needs a look before launch.
+
 ## Known accepted risks (not blockers)
-- **`/api/history` is unauthenticated** — anyone can read a given address's
-  threads by passing the address. Pseudonymous, but a privacy leak. Follow-up:
-  require a wallet-signed message to prove address ownership.
+- **History sign-in has a 5-minute replay window** — a captured signed request
+  could be replayed within 5 min. Over HTTPS this is minimal for a read-only
+  endpoint; tighten with a server-issued nonce if needed.
 - **`waitForTx` polls ~160s** — usually enough post-Nakamoto; slow blocks fall
   into the existing "Check payment" recovery path (no funds lost).
 - **`/api/stats` selects all rows** — fine now, switch to a SQL aggregate as the

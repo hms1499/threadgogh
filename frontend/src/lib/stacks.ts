@@ -18,6 +18,14 @@ export function disconnectWallet() {
   disconnect();
 }
 
+// Sign a plain message with the connected wallet (sign-in-with-Stacks). Returns
+// the RSV signature; the server recovers the public key + address from it.
+export async function signMessage(message: string): Promise<string> {
+  const res = await request('stx_signMessage', { message });
+  if (!res?.signature) throw new Error('Wallet did not return a signature');
+  return res.signature;
+}
+
 export async function payInvoice(opts: {
   token: 'STX' | 'SBTC';
   invoiceId: string; // 64 hex chars
