@@ -1,4 +1,4 @@
-# ThreadPay — 2-Minute Demo Script
+# ThreadGogh — 2-Minute Demo Script
 
 A pay-per-call AI service settled on Bitcoin/Stacks: generate an X thread, pay per
 generation with STX or sBTC via an x402 flow. No account, no subscription, no API key —
@@ -29,7 +29,7 @@ a Stacks wallet is the only login.
 ## The script (~2 min)
 
 **0:00 — Frame it (15s).**
-"This is ThreadPay. It's an AI thread writer, but there's no signup and no monthly plan —
+"This is ThreadGogh. It's an AI thread writer, but there's no signup and no monthly plan —
 you pay a few cents per generation, on-chain, with Bitcoin. The payment *is* the API key.
 It uses an x402 flow: the server answers HTTP 402 with an invoice, you pay a Clarity
 contract, the contract writes a receipt, and the server only generates after it verifies

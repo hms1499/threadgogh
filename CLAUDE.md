@@ -1,11 +1,11 @@
-# ThreadPay
+# ThreadGogh
 
 High-level index for this repo. Deep detail lives in `.claude/docs/` — follow the
 links in **Additional Documentation** before touching a domain you don't know.
 
 ## 1. Project Overview
 
-ThreadPay generates X (Twitter) threads with an LLM and charges per generation via
+ThreadGogh generates X (Twitter) threads with an LLM and charges per generation via
 an x402-style flow on Stacks: the API returns HTTP 402 with an invoice, the user pays
 STX or sBTC on-chain to a Clarity contract that records a receipt, and the server
 verifies that receipt before generating. No accounts, no subscriptions — payment is

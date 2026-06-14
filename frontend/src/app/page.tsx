@@ -162,7 +162,7 @@ export default function Home() {
               className="tp-display"
               style={{ margin: 0, fontWeight: 700, fontStyle: 'italic', color: '#fdfcf7', fontSize: 38 }}
             >
-              ThreadPay
+              ThreadGogh
             </Title>
           </Flex>
           <Paragraph
@@ -241,7 +241,7 @@ export default function Home() {
       {stats && (
         <div className="vg-gallery tp-rise" style={{ marginTop: 48 }}>
           <Text className="vg-plate" style={{ display: 'block', marginBottom: 16 }}>
-            The ThreadPay Collection
+            The ThreadGogh Collection
           </Text>
           <Flex gap={32} wrap>
             <Statistic

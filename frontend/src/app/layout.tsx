@@ -8,7 +8,7 @@ const display = Playfair_Display({ subsets: ['latin'], variable: '--font-display
 const sora = Sora({ subsets: ['latin'], variable: '--font-sora' });
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
 
-const TITLE = 'ThreadPay — AI threads, pay per generate with Bitcoin';
+const TITLE = 'ThreadGogh — AI threads, pay per generate with Bitcoin';
 const DESCRIPTION =
   'AI writes X threads — pay per generate with STX or sBTC on Stacks. No account, no subscription.';
 
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     type: 'website',
-    siteName: 'ThreadPay',
+    siteName: 'ThreadGogh',
   },
   twitter: {
     card: 'summary_large_image',
