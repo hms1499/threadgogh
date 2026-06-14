@@ -24,3 +24,13 @@ create table generations (
 );
 
 create index generations_payer_idx on generations(payer_address);
+
+-- All access is server-side via the service-role key (which bypasses RLS).
+-- Enable RLS with no policies so the public anon/authenticated roles cannot
+-- read these tables directly through PostgREST. See migration 0002.
+alter table invoices    enable row level security;
+alter table generations enable row level security;
+alter table invoices    force row level security;
+alter table generations force row level security;
+revoke all on invoices    from anon, authenticated;
+revoke all on generations from anon, authenticated;
