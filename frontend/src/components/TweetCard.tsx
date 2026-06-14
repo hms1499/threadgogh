@@ -11,8 +11,10 @@ export function TweetCard({ text, index, total }: {
   const { message } = App.useApp();
   const over = text.length > 280;
 
+  // Each painting "hangs" a beat after the previous one — gallery-style stagger.
   return (
-    <div className="vg-frame">
+    <div className="tp-rise" style={{ animationDelay: `${index * 0.09}s` }}>
+      <div className="vg-frame">
       <div className="vg-frame__canvas">
         {/* Museum plate label + character counter */}
         <Flex justify="space-between" align="center" style={{ marginBottom: 10 }}>
@@ -62,6 +64,7 @@ export function TweetCard({ text, index, total }: {
             Copy
           </Button>
         </Flex>
+      </div>
       </div>
     </div>
   );
