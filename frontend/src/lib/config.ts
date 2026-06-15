@@ -6,6 +6,12 @@ export const SBTC_CONTRACT =
 export const HIRO_API =
   process.env.NEXT_PUBLIC_HIRO_API ?? 'https://api.testnet.hiro.so';
 
+// App domain bound into the sign-in message (host only, no scheme/trailing slash).
+// Both client and server read this so the message stays byte-identical; binding it
+// stops a signature from being replayed against a phishing clone. Override to
+// 'localhost' in .env.local for dev.
+export const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'threadgogh.vercel.app';
+
 // Stacks network — drives on-chain calls (receipt read, payInvoice) and explorer
 // links. Set NEXT_PUBLIC_HIRO_API + NEXT_PUBLIC_CONTRACT to match when changing it.
 export type StacksNetwork = 'mainnet' | 'testnet';

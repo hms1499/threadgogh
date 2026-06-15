@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import { publicKeyFromSignatureRsv, getAddressFromPublicKey } from '@stacks/transactions';
-import { STACKS_NETWORK } from './config';
+import { STACKS_NETWORK, APP_DOMAIN } from './config';
 import { buildHistoryMessage } from './auth-message';
 
 // Server-only. Verifies a Stacks wallet signature proving the requester controls
@@ -47,7 +47,7 @@ export function verifyHistoryAuth({ address, message, signature }: HistoryAuth):
 
   // Reconstruct the exact expected message: rejects any altered/extra content and
   // binds the signature to this address.
-  if (message !== buildHistoryMessage(address, issued[1])) {
+  if (message !== buildHistoryMessage(address, issued[1], APP_DOMAIN, STACKS_NETWORK)) {
     return { ok: false, reason: 'message does not match expected template' };
   }
 

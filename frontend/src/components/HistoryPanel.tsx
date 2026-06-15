@@ -5,6 +5,7 @@ import { Typography, Tag, Flex, Button, App } from 'antd';
 import { SafetyOutlined } from '@ant-design/icons';
 import { signMessage } from '@/lib/stacks';
 import { buildHistoryMessage } from '@/lib/auth-message';
+import { APP_DOMAIN, STACKS_NETWORK } from '@/lib/config';
 
 const { Text } = Typography;
 
@@ -35,7 +36,7 @@ export function HistoryPanel({ address, onSelect }: {
 
   async function ensureCred(addr: string) {
     if (cred) return cred;
-    const message = buildHistoryMessage(addr, new Date().toISOString());
+    const message = buildHistoryMessage(addr, new Date().toISOString(), APP_DOMAIN, STACKS_NETWORK);
     const signature = await signMessage(message);
     const c = { message, signature };
     setCred(c);
