@@ -8,13 +8,15 @@ import { buildHistoryMessage } from '@/lib/auth-message';
 
 const { Text } = Typography;
 
+type Cursor = { createdAt: string; id: number };
+
 type Item = {
   invoice_id: string;
   token: string;
   amount: number;
   thread_content: string[];
   created_at: string;
-  invoices: { topic: string } | null;
+  topic: string | null;
 };
 
 export function HistoryPanel({ address, onSelect }: {
@@ -23,29 +25,47 @@ export function HistoryPanel({ address, onSelect }: {
 }) {
   const { message: msg } = App.useApp();
   const [items, setItems] = useState<Item[] | null>(null); // null = not signed in yet
+  // The verified sign-in signature, cached so paging doesn't re-prompt the wallet.
+  // Valid for the server's 5-minute window; cleared on a 401 to force a re-sign.
+  const [cred, setCred] = useState<{ message: string; signature: string } | null>(null);
+  const [cursor, setCursor] = useState<Cursor | null>(null); // next page, null = no more
   const [loading, setLoading] = useState(false);
 
   if (!address) return null;
 
-  // History is gated behind a wallet signature proving the caller owns the
-  // address — a free, no-fee sign-in. Triggered on demand, not on every load.
-  async function loadHistory() {
+  async function ensureCred(addr: string) {
+    if (cred) return cred;
+    const message = buildHistoryMessage(addr, new Date().toISOString());
+    const signature = await signMessage(message);
+    const c = { message, signature };
+    setCred(c);
+    return c;
+  }
+
+  // History is gated behind a wallet signature proving the caller owns the address
+  // — a free, no-fee sign-in. `next` null loads the first page (replacing); a cursor
+  // appends the next page reusing the cached signature.
+  async function loadPage(next: Cursor | null) {
     if (!address) return;
     setLoading(true);
     try {
-      const message = buildHistoryMessage(address, new Date().toISOString());
-      const signature = await signMessage(message);
+      const c = await ensureCred(address);
       const res = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, message, signature }),
+        body: JSON.stringify({ address, message: c.message, signature: c.signature, cursor: next }),
       });
+      if (res.status === 401) {
+        setCred(null); // expired/invalid — next click re-signs
+        throw new Error('Your sign-in expired. Please sign in again.');
+      }
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         throw new Error(e.error ?? `Error ${res.status}`);
       }
       const d = await res.json();
-      setItems(d.items ?? []);
+      setItems((prev) => (next && prev ? [...prev, ...(d.items ?? [])] : (d.items ?? [])));
+      setCursor(d.nextCursor ?? null);
     } catch (e) {
       msg.error(e instanceof Error ? e.message : 'Could not load history');
     } finally {
@@ -63,7 +83,7 @@ export function HistoryPanel({ address, onSelect }: {
         <Button
           icon={<SafetyOutlined />}
           loading={loading}
-          onClick={loadHistory}
+          onClick={() => loadPage(null)}
           style={{ alignSelf: 'flex-start' }}
         >
           Sign in to view your history
@@ -87,7 +107,7 @@ export function HistoryPanel({ address, onSelect }: {
               }}
               style={{ cursor: 'pointer', padding: '10px 8px' }}
             >
-              <Text style={{ display: 'block' }}>{it.invoices?.topic ?? '(unknown topic)'}</Text>
+              <Text style={{ display: 'block' }}>{it.topic ?? '(unknown topic)'}</Text>
               <Flex gap={8} align="center" style={{ marginTop: 4 }}>
                 <Tag className="tp-mono" variant="filled" color={it.token === 'SBTC' ? 'gold' : 'default'}>
                   {it.token}
@@ -98,6 +118,19 @@ export function HistoryPanel({ address, onSelect }: {
               </Flex>
             </div>
           ))}
+
+          {cursor !== null && (
+            <Button
+              type="text"
+              size="small"
+              loading={loading}
+              onClick={() => loadPage(cursor)}
+              icon={cred === null ? <SafetyOutlined /> : undefined}
+              style={{ alignSelf: 'flex-start', marginTop: 6 }}
+            >
+              {cred === null ? 'Sign in to load more' : 'Load more'}
+            </Button>
+          )}
         </Flex>
       )}
     </Flex>
