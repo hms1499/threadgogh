@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { verifyHistoryAuth } from '@/lib/auth';
+import { fetchHistoryPage, type HistoryCursor } from '@/lib/history';
 
 // POST (not GET): the body carries a wallet signature proving the caller controls
 // the address. Without it, anyone could read any address's threads by guessing it.
@@ -13,12 +13,20 @@ export async function POST(req: NextRequest) {
   });
   if (!auth.ok) return NextResponse.json({ error: `unauthorized: ${auth.reason}` }, { status: 401 });
 
-  const { data, error } = await supabase
-    .from('generations')
-    .select('invoice_id, token, amount, tx_id, thread_content, created_at, invoices(topic)')
-    .eq('payer_address', body.address)
-    .order('created_at', { ascending: false })
-    .limit(20);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ items: data });
+  try {
+    const { items, nextCursor } = await fetchHistoryPage(body.address, parseCursor(body.cursor));
+    return NextResponse.json({ items, nextCursor });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'history read failed' }, { status: 500 });
+  }
+}
+
+// A cursor is only trusted to be paged back to us; a malformed one falls back to
+// the first page rather than erroring (and never widens what the caller can read,
+// which is already gated by their verified address).
+function parseCursor(raw: unknown): HistoryCursor | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const { createdAt, id } = raw as Record<string, unknown>;
+  if (typeof createdAt !== 'string' || typeof id !== 'number') return null;
+  return { createdAt, id };
 }
