@@ -23,7 +23,10 @@ create table generations (
   created_at timestamptz not null default now()
 );
 
-create index generations_payer_idx on generations(payer_address);
+-- Composite index supports the history query: filter by payer_address, ordered
+-- by created_at desc with id as the keyset tiebreaker. See migration 0003.
+create index generations_payer_created_idx
+  on generations (payer_address, created_at desc, id desc);
 
 -- All access is server-side via the service-role key (which bypasses RLS).
 -- Enable RLS with no policies so the public anon/authenticated roles cannot
