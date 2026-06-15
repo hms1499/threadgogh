@@ -272,6 +272,42 @@ body::after {
   box-shadow: inset 2px 0 0 var(--vg-star);
 }
 
+/* ─── History drawer — woven canvas panel, gold-leaf trim ─────── */
+.vg-drawer__section {
+  background-color: var(--vg-card) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cg fill='none' stroke='%23e8eaf6'%3E%3Cpath d='M0 1 H8' opacity='0.035' stroke-width='0.6'/%3E%3Cpath d='M0 5 H8' opacity='0.025' stroke-width='0.6'/%3E%3Cpath d='M1 0 V8' opacity='0.035' stroke-width='0.6'/%3E%3Cpath d='M5 0 V8' opacity='0.025' stroke-width='0.6'/%3E%3C/g%3E%3C/svg%3E");
+  border-left: 1px solid var(--vg-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Transparent header so the canvas grain shows through; gold accent on top,
+   muted gold hairline below. */
+.vg-drawer__header {
+  background: transparent;
+  border-bottom: 1px solid rgba(245, 215, 110, 0.22);
+  box-shadow: inset 0 2px 0 var(--vg-star);
+}
+
+.vg-drawer__body {
+  background: transparent;
+}
+
+/* Gold close icon that rotates on hover. */
+.vg-drawer__close {
+  color: var(--vg-star);
+  transition: color 0.2s, transform 0.2s;
+}
+.vg-drawer__close:hover {
+  color: #f7e190;
+  transform: rotate(90deg);
+}
+
+/* Deeper night tint behind the panel. */
+.vg-drawer__mask {
+  background: rgba(8, 14, 28, 0.6);
+}
+
 /* ─── Reveal animation ─────────────────────────────────────────── */
 @keyframes tp-rise {
   from { opacity: 0; transform: translateY(14px); }

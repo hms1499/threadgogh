@@ -254,9 +254,17 @@ export default function Home() {
       <Drawer
         title="Your threads"
         placement="right"
-        width={380}
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
+        styles={{ title: { fontSize: 15 } }}
+        classNames={{
+          section: 'vg-drawer__section',
+          header: 'vg-drawer__header',
+          title: 'vg-plate',
+          body: 'vg-drawer__body',
+          close: 'vg-drawer__close',
+          mask: 'vg-drawer__mask',
+        }}
       >
         <HistoryPanel
           address={address}
