@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Button, Typography, Flex, Statistic, App } from 'antd';
+import { Button, Typography, Flex, Statistic, App, Drawer } from 'antd';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
-import { WalletOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons';
+import { WalletOutlined, CopyOutlined, CheckOutlined, HistoryOutlined } from '@ant-design/icons';
 import { ThreadForm, type FormValues } from '@/components/ThreadForm';
 import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
@@ -27,6 +27,7 @@ export default function Home() {
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string>();
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
   const [copiedAll, setCopiedAll] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
   function refreshStats() {
@@ -140,19 +141,36 @@ export default function Home() {
 
       {/* ── Hero: the real Starry Night painting ── */}
       <div className="vg-hero tp-rise">
-        <Button
-          className={`vg-hero__wallet vg-wallet-btn ${address ? 'tp-mono' : ''}`}
-          icon={<WalletOutlined />}
-          onClick={toggleWallet}
-          style={{
-            background: 'rgba(8,14,28,0.55)',
-            borderColor: 'rgba(61,90,173,0.6)',
-            color: address ? '#9fa8d4' : '#e8eaf6',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect wallet'}
-        </Button>
+        <Flex gap={8} style={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}>
+          {address && (
+            <Button
+              className="vg-wallet-btn"
+              icon={<HistoryOutlined />}
+              onClick={() => setHistoryOpen(true)}
+              style={{
+                background: 'rgba(8,14,28,0.55)',
+                borderColor: 'rgba(61,90,173,0.6)',
+                color: '#e8eaf6',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              History
+            </Button>
+          )}
+          <Button
+            className={`vg-wallet-btn ${address ? 'tp-mono' : ''}`}
+            icon={<WalletOutlined />}
+            onClick={toggleWallet}
+            style={{
+              background: 'rgba(8,14,28,0.55)',
+              borderColor: 'rgba(61,90,173,0.6)',
+              color: address ? '#9fa8d4' : '#e8eaf6',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            {address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connect wallet'}
+          </Button>
+        </Flex>
 
         <div className="vg-hero__content">
           <Flex align="center" gap={10}>
@@ -232,10 +250,19 @@ export default function Home() {
       {/* ── Empty state — before the first generation ── */}
       {thread.length === 0 && phase === 'idle' && <EmptyGallery />}
 
-      {/* ── History ── */}
-      <div style={{ marginTop: 32 }}>
-        <HistoryPanel address={address} onSelect={(t) => { setThread(t); setPhase('done'); }} />
-      </div>
+      {/* ── History — opened from the hero, not inline ── */}
+      <Drawer
+        title="Your threads"
+        placement="right"
+        width={380}
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+      >
+        <HistoryPanel
+          address={address}
+          onSelect={(t) => { setThread(t); setPhase('done'); setHistoryOpen(false); }}
+        />
+      </Drawer>
 
       {/* ── Stats — gallery placard with Sunflowers ── */}
       {stats && (

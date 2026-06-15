@@ -73,10 +73,6 @@ export function HistoryPanel({ address, onSelect }: {
 
   return (
     <Flex vertical gap={10}>
-      <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-        Your threads
-      </Text>
-
       {items === null ? (
         <Button
           icon={<SafetyOutlined />}
