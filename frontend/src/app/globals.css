@@ -318,6 +318,41 @@ body::after {
   animation: tp-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* ─── Paint-sweep reveal — each tweet brushed in left→right ─────── */
+@keyframes vg-paint-wipe {
+  from { clip-path: inset(0 100% 0 0 round 7px); opacity: 0; }
+  60%  { opacity: 1; }
+  to   { clip-path: inset(0 0 0 0 round 7px); opacity: 1; }
+}
+
+@keyframes vg-paint-sheen {
+  from { transform: translateX(-130%); opacity: 0; }
+  18%  { opacity: 1; }
+  to   { transform: translateX(130%); opacity: 0; }
+}
+
+.vg-paint {
+  animation: vg-paint-wipe 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--paint-delay, 0s);
+}
+
+/* Wet-brush gold streak, clipped inside the canvas so it never overflows
+   or cuts the frame's outer glow. */
+.vg-paint .vg-frame__canvas {
+  overflow: hidden;
+}
+.vg-paint .vg-frame__canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(245, 215, 110, 0.4) 50%, transparent 62%);
+  transform: translateX(-130%);
+  opacity: 0;
+  animation: vg-paint-sheen 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--paint-delay, 0s);
+}
+
 /* ─── Moon shimmer on the header logo ─────────────────────────── */
 @keyframes vg-shimmer {
   0%, 100% { text-shadow: 0 0 12px rgba(245, 215, 110, 0.6), 0 0 28px rgba(245, 215, 110, 0.3); }

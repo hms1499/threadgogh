@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Typography, Button, Flex, App } from 'antd';
 import { CopyOutlined, CheckOutlined } from '@ant-design/icons';
 
@@ -13,9 +13,10 @@ export function TweetCard({ text, index, total }: {
   const [copied, setCopied] = useState(false);
   const over = text.length > 280;
 
-  // Each painting "hangs" a beat after the previous one — gallery-style stagger.
+  // Each painting is brushed in a beat after the previous one — gallery-style stagger.
+  // The delay is a custom property so the sheen pseudo-element inherits it too.
   return (
-    <div className="tp-rise" style={{ animationDelay: `${index * 0.09}s` }}>
+    <div className="vg-paint" style={{ '--paint-delay': `${index * 0.1}s` } as CSSProperties}>
       <div className={`vg-frame${over ? ' vg-frame--over' : ''}`}>
       <div className="vg-frame__canvas">
         {/* Museum plate label + character counter */}
