@@ -19,6 +19,7 @@ beforeEach(() => {
   delete process.env.NEXT_PUBLIC_STACKS_NETWORK;
   delete process.env.NEXT_PUBLIC_HIRO_API;
   delete process.env.NEXT_PUBLIC_SBTC_CONTRACT;
+  delete process.env.AUTH_SESSION_SECRET;
 });
 
 afterEach(() => {
@@ -31,6 +32,7 @@ function setValidEnv() {
   process.env.NEXT_PUBLIC_CONTRACT = 'ST000.thread-pay';
   process.env.LLM_PROVIDER = 'groq';
   process.env.GROQ_API_KEY = 'gsk_test';
+  process.env.AUTH_SESSION_SECRET = 'test-secret-at-least-32-bytes-long-xxxxxx';
 }
 
 describe('assertServerEnv', () => {
@@ -51,6 +53,20 @@ describe('assertServerEnv', () => {
     setValidEnv();
     const assertServerEnv = await freshAssert();
     expect(() => assertServerEnv()).not.toThrow();
+  });
+
+  it('rejects a missing AUTH_SESSION_SECRET', async () => {
+    setValidEnv();
+    delete process.env.AUTH_SESSION_SECRET;
+    const assertServerEnv = await freshAssert();
+    expect(() => assertServerEnv()).toThrow(/AUTH_SESSION_SECRET/);
+  });
+
+  it('rejects a too-short AUTH_SESSION_SECRET', async () => {
+    setValidEnv();
+    process.env.AUTH_SESSION_SECRET = 'short';
+    const assertServerEnv = await freshAssert();
+    expect(() => assertServerEnv()).toThrow(/AUTH_SESSION_SECRET/);
   });
 
   it('flags an unknown LLM_PROVIDER', async () => {

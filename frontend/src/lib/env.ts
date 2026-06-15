@@ -20,6 +20,14 @@ export function assertServerEnv(): void {
     problems.push('NEXT_PUBLIC_CONTRACT is missing (e.g. ST....thread-pay)');
   }
 
+  // Secret that signs the history session cookie. Short keys weaken the HMAC.
+  const sessionSecret = process.env.AUTH_SESSION_SECRET;
+  if (!sessionSecret) {
+    problems.push('AUTH_SESSION_SECRET is missing (>=32 chars; signs history session cookies)');
+  } else if (sessionSecret.length < 32) {
+    problems.push('AUTH_SESSION_SECRET must be at least 32 characters');
+  }
+
   // LLM provider name + key (resolveLlmConfig throws on an unknown provider name).
   try {
     const llm = resolveLlmConfig(process.env);
