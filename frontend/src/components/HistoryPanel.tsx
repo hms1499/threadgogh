@@ -26,39 +26,36 @@ export function HistoryPanel({ address, onSelect }: {
 }) {
   const { message: msg } = App.useApp();
   const [items, setItems] = useState<Item[] | null>(null); // null = not signed in yet
-  // The verified sign-in signature, cached so paging doesn't re-prompt the wallet.
-  // Valid for the server's 5-minute window; cleared on a 401 to force a re-sign.
-  const [cred, setCred] = useState<{ message: string; signature: string } | null>(null);
   const [cursor, setCursor] = useState<Cursor | null>(null); // next page, null = no more
   const [loading, setLoading] = useState(false);
 
   if (!address) return null;
 
-  async function ensureCred(addr: string) {
-    if (cred) return cred;
-    const message = buildHistoryMessage(addr, new Date().toISOString(), APP_DOMAIN, STACKS_NETWORK);
-    const signature = await signMessage(message);
-    const c = { message, signature };
-    setCred(c);
-    return c;
-  }
-
-  // History is gated behind a wallet signature proving the caller owns the address
-  // — a free, no-fee sign-in. `next` null loads the first page (replacing); a cursor
-  // appends the next page reusing the cached signature.
+  // History is gated behind a wallet signature proving the caller owns the address —
+  // a free, no-fee sign-in. The first page signs and the server returns a session
+  // cookie; later pages (and remounts within the cookie's lifetime) send only the
+  // cursor and ride that cookie, so the wallet is never prompted again.
   async function loadPage(next: Cursor | null) {
     if (!address) return;
+    const firstLoad = next === null;
     setLoading(true);
     try {
-      const c = await ensureCred(address);
+      let signIn = {};
+      if (firstLoad) {
+        const message = buildHistoryMessage(address, new Date().toISOString(), APP_DOMAIN, STACKS_NETWORK);
+        const signature = await signMessage(message);
+        signIn = { address, message, signature };
+      }
       const res = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, message: c.message, signature: c.signature, cursor: next }),
+        body: JSON.stringify({ ...signIn, cursor: next }),
       });
       if (res.status === 401) {
-        setCred(null); // expired/invalid — next click re-signs
-        throw new Error('Your sign-in expired. Please sign in again.');
+        // Session lapsed mid-paging — drop back to the sign-in button.
+        setItems(null);
+        setCursor(null);
+        throw new Error('Your session expired. Please sign in again.');
       }
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
@@ -126,10 +123,9 @@ export function HistoryPanel({ address, onSelect }: {
               size="small"
               loading={loading}
               onClick={() => loadPage(cursor)}
-              icon={cred === null ? <SafetyOutlined /> : undefined}
               style={{ alignSelf: 'flex-start', marginTop: 6 }}
             >
-              {cred === null ? 'Sign in to load more' : 'Load more'}
+              Load more
             </Button>
           )}
         </Flex>
