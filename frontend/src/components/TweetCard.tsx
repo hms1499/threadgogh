@@ -28,11 +28,11 @@ export function TweetCard({ text, index, total }: {
             className="tp-mono"
             style={{
               fontSize: 11,
-              color: over ? '#e57373' : '#8593cf',
-              background: over ? 'rgba(229,115,115,0.1)' : 'rgba(37,61,138,0.25)',
+              color: over ? 'var(--vg-error)' : 'var(--vg-faint)',
+              background: over ? 'rgba(229,115,115,0.1)' : 'var(--vg-pill-bg)',
               padding: '2px 8px',
               borderRadius: 6,
-              border: `1px solid ${over ? 'rgba(229,115,115,0.3)' : 'rgba(61,90,173,0.25)'}`,
+              border: `1px solid ${over ? 'rgba(229,115,115,0.3)' : 'var(--vg-pill-border)'}`,
             }}
           >
             {text.length}/280
@@ -45,7 +45,7 @@ export function TweetCard({ text, index, total }: {
             margin: '0 0 12px',
             fontSize: 15,
             lineHeight: 1.65,
-            color: '#e8eaf6',
+            color: 'var(--vg-canvas)',
           }}
         >
           {text}
@@ -58,7 +58,7 @@ export function TweetCard({ text, index, total }: {
             size="small"
             type="text"
             icon={copied ? <CheckOutlined /> : <CopyOutlined />}
-            style={{ color: copied ? '#7bc67e' : '#8593cf', fontSize: 12 }}
+            style={{ color: copied ? 'var(--vg-success)' : 'var(--vg-faint)', fontSize: 12 }}
             onClick={async () => {
               await navigator.clipboard.writeText(text);
               message.success('Tweet copied');
