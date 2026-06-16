@@ -84,11 +84,17 @@ describe('parseHook', () => {
 
   it('truncates a hook over 280 chars', () => {
     const long = 'x'.repeat(300);
-    expect(parseHook(JSON.stringify([long])).length).toBeLessThanOrEqual(280);
+    const out = parseHook(JSON.stringify([long]));
+    expect(out.length).toBeLessThanOrEqual(280);
+    expect(out).toMatch(/\.\.\.$/);
   });
 
   it('throws when there is no usable string', () => {
     expect(() => parseHook('{"a":1}')).toThrow();
+  });
+
+  it('throws on a whitespace-only string', () => {
+    expect(() => parseHook('"   "')).toThrow();
   });
 });
 

@@ -184,7 +184,11 @@ export function parseHook(raw: string): string {
     value = JSON.parse(cleaned);
   } catch {
     const slice = extractJsonSlice(cleaned);
-    value = slice === null ? cleaned : (() => { try { return JSON.parse(slice); } catch { return cleaned; } })();
+    if (slice !== null) {
+      try { value = JSON.parse(slice); } catch { value = cleaned; }
+    } else {
+      value = cleaned;
+    }
   }
   let hook: unknown = value;
   if (Array.isArray(value)) hook = value[0];
