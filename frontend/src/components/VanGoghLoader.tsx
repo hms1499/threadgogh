@@ -42,7 +42,7 @@ export function VanGoghLoader({ label = 'Painting your thread…' }: { label?: s
         <circle className="vg-loader__star" cx="22" cy="88" r="2" fill="#f7e190" />
       </svg>
 
-      <Text className="vg-loader__caption tp-display" style={{ color: '#c9b85e', fontStyle: 'italic', fontSize: 15 }}>
+      <Text className="vg-loader__caption tp-display" style={{ color: 'var(--vg-gold)', fontStyle: 'italic', fontSize: 15 }}>
         {label}
       </Text>
     </Flex>

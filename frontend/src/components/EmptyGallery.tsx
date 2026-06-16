@@ -36,10 +36,10 @@ export function EmptyGallery() {
         <circle className="vg-easel-star" cx="102" cy="86" r="1.4" fill="#f5d76e" opacity="0.8" />
       </svg>
 
-      <Text className="tp-display" style={{ color: '#c9b85e', fontStyle: 'italic', fontSize: 17 }}>
+      <Text className="tp-display" style={{ color: 'var(--vg-gold)', fontStyle: 'italic', fontSize: 17 }}>
         An empty canvas
       </Text>
-      <Text style={{ color: '#8593cf', fontSize: 14, textAlign: 'center', maxWidth: 320 }}>
+      <Text style={{ color: 'var(--vg-faint)', fontSize: 14, textAlign: 'center', maxWidth: 320 }}>
         Generate your first thread — it&apos;ll hang here as a framed painting.
       </Text>
     </Flex>
