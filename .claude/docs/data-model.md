@@ -16,6 +16,7 @@ client component.
 | `status` | text | `pending` → `generating` → `consumed` (`paid` legacy/unused) |
 | `expires_at` | timestamptz | quote TTL = `INVOICE_TTL_MINUTES` (15) |
 | `generating_at` | timestamptz null | stamped on lock claim; powers stale-lock recovery |
+| `preview_hook` | text null | free single-tweet hook shown pre-payment, reused as tweet #1 |
 | `created_at` | timestamptz | default `now()` |
 
 ### `generations`
@@ -61,5 +62,6 @@ SQL lives in `frontend/supabase/migrations/`, applied manually in the Supabase S
 editor (no automated runner). Current:
 
 - `0001_invoices_generating_at.sql` — adds the nullable `generating_at` column.
+- `0002_invoices_preview_hook.sql` — adds the nullable `preview_hook` column.
 
 When you change a table, add a numbered migration file here and note it in this doc.
