@@ -110,6 +110,14 @@ describe('assembleThread', () => {
   it('returns the rest unchanged when no first tweet is pinned', () => {
     expect(assembleThread(null, ['a', 'b'], 5)).toEqual(['a', 'b']);
   });
+
+  it('caps the no-firstTweet branch to length too', () => {
+    expect(assembleThread(null, ['a', 'b', 'c', 'd', 'e', 'f'], 3)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('returns just the pinned tweet when the model adds nothing', () => {
+    expect(assembleThread('HOOK', [], 5)).toEqual(['HOOK']);
+  });
 });
 
 describe('extractText', () => {

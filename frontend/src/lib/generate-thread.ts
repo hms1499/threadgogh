@@ -224,12 +224,12 @@ export async function generateHook(topic: string, tone: Tone): Promise<string> {
 }
 
 // Combine an optional pinned first tweet with the model's continuation, capped at
-// `length`. When firstTweet is null, the model's array is returned as-is.
+// `length`. When firstTweet is null/empty, only the model's array is used.
 export function assembleThread(
   firstTweet: string | null, rest: string[], length: number,
 ): string[] {
-  if (!firstTweet) return rest;
-  return [firstTweet, ...rest].slice(0, length);
+  const head = firstTweet ? [firstTweet] : [];
+  return [...head, ...rest].slice(0, length);
 }
 
 export async function generateThread(
@@ -242,7 +242,7 @@ export async function generateThread(
       `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
     );
   }
-  const firstTweet = opts?.firstTweet ?? null;
+  const firstTweet = opts?.firstTweet && opts.firstTweet.trim() !== '' ? opts.firstTweet : null;
   const wanted = firstTweet ? length - 1 : length;
   const system = [
     'You are an expert X (Twitter) thread writer.',
