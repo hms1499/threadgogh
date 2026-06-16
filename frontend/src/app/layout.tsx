@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Playfair_Display, Sora, JetBrains_Mono } from 'next/font/google';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { Providers } from './providers';
+import { ThemeProvider } from '@/theme/ThemeContext';
 import './globals.css';
 
 const display = Playfair_Display({ subsets: ['latin'], variable: '--font-display', style: ['normal', 'italic'] });
@@ -41,9 +42,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${sora.variable} ${mono.variable}`}>
       <body>
-        <AntdRegistry>
-          <Providers>{children}</Providers>
-        </AntdRegistry>
+        {/* Set the theme before first paint to avoid a flash of the wrong theme. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var s=localStorage.getItem('tg-theme');var m=(s==='light'||s==='dark')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.dataset.theme=m;e.style.colorScheme=m;}catch(_){}})();",
+          }}
+        />
+        <ThemeProvider>
+          <AntdRegistry>
+            <Providers>{children}</Providers>
+          </AntdRegistry>
+        </ThemeProvider>
       </body>
     </html>
   );
