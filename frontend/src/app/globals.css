@@ -21,6 +21,8 @@
   --vg-gold:         #c9b85e;
   --vg-success:      #7bc67e;
   --vg-error:        #e57373;
+  --vg-error-bg:     rgba(229, 115, 115, 0.10);
+  --vg-error-border: rgba(229, 115, 115, 0.30);
   --vg-glass:        rgba(8, 14, 28, 0.55);
   --vg-glass-border: rgba(61, 90, 173, 0.6);
   --vg-pill-bg:      rgba(37, 61, 138, 0.25);
@@ -52,6 +54,8 @@ html[data-theme="light"] {
   --vg-gold:         #9a7d2e;
   --vg-success:      #4e9a51;
   --vg-error:        #c0504d;
+  --vg-error-bg:     rgba(192, 80, 77, 0.12);
+  --vg-error-border: rgba(192, 80, 77, 0.32);
   --vg-glass:        rgba(255, 248, 230, 0.88);
   --vg-glass-border: rgba(154, 125, 46, 0.42);
   --vg-pill-bg:      rgba(154, 125, 46, 0.15);
@@ -344,7 +348,7 @@ body::after {
   transition: color 0.2s, transform 0.2s;
 }
 .vg-drawer__close:hover {
-  color: #f7e190;
+  color: var(--vg-moon);
   transform: rotate(90deg);
 }
 
@@ -520,6 +524,16 @@ html[data-theme="light"] .vg-gallery {
 /* History drawer: lighter scrim mask in daylight. */
 html[data-theme="light"] .vg-drawer__mask {
   background: rgba(60, 47, 16, 0.35);
+}
+
+/* History row hover: warm sunflower tint instead of cobalt in daylight. */
+html[data-theme="light"] .vg-history-item:hover {
+  background-color: var(--vg-pill-bg);
+}
+
+/* Star-glow button: amber glow in daylight to match the sunflower primary. */
+html[data-theme="light"] .vg-glow-btn {
+  box-shadow: 0 0 18px rgba(217, 154, 10, 0.30), 0 4px 20px rgba(217, 154, 10, 0.18) !important;
 }
 
 /* ─── Theme toggle icon ───────────────────────────────────────── */

@@ -29,10 +29,10 @@ export function TweetCard({ text, index, total }: {
             style={{
               fontSize: 11,
               color: over ? 'var(--vg-error)' : 'var(--vg-faint)',
-              background: over ? 'rgba(229,115,115,0.1)' : 'var(--vg-pill-bg)',
+              background: over ? 'var(--vg-error-bg)' : 'var(--vg-pill-bg)',
               padding: '2px 8px',
               borderRadius: 6,
-              border: `1px solid ${over ? 'rgba(229,115,115,0.3)' : 'var(--vg-pill-border)'}`,
+              border: `1px solid ${over ? 'var(--vg-error-border)' : 'var(--vg-pill-border)'}`,
             }}
           >
             {text.length}/280
