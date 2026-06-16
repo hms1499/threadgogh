@@ -52,7 +52,7 @@ html[data-theme="light"] {
   --vg-gold:         #9a7d2e;
   --vg-success:      #4e9a51;
   --vg-error:        #c0504d;
-  --vg-glass:        rgba(255, 248, 230, 0.62);
+  --vg-glass:        rgba(255, 248, 230, 0.88);
   --vg-glass-border: rgba(154, 125, 46, 0.42);
   --vg-pill-bg:      rgba(154, 125, 46, 0.15);
   --vg-pill-border:  rgba(154, 125, 46, 0.30);
