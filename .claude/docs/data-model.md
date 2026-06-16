@@ -27,6 +27,7 @@ client component.
 | `invoice_id` | text **unique** FK → invoices | the unique constraint is the anti-double-spend guard |
 | `payer_address`, `token`, `amount`, `tx_id` | | copied from the verified receipt |
 | `thread_content` | jsonb | `string[]` of tweets |
+| `regen_count` | int not null default 0 | free re-rolls used; capped at `MAX_FREE_REGENS` via CAS |
 | `created_at` | timestamptz | indexed via `generations_payer_idx` for history |
 
 ## Invoice state machine
@@ -63,5 +64,6 @@ editor (no automated runner). Current:
 
 - `0001_invoices_generating_at.sql` — adds the nullable `generating_at` column.
 - `0002_invoices_preview_hook.sql` — adds the nullable `preview_hook` column.
+- `0003_generations_regen_count.sql` — adds `regen_count` (default 0).
 
 When you change a table, add a numbered migration file here and note it in this doc.

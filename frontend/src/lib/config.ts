@@ -27,6 +27,8 @@ export const STACKS_NETWORK: StacksNetwork = RAW_NETWORK;
 export const PRICE_STX = Number(process.env.PRICE_STX ?? 100000);
 export const PRICE_SBTC = Number(process.env.PRICE_SBTC ?? 100);
 export const INVOICE_TTL_MINUTES = 15;
+// Free whole-thread re-rolls allowed per paid invoice (#2).
+export const MAX_FREE_REGENS = Number(process.env.MAX_FREE_REGENS ?? 3);
 
 // A 'generating' lock older than this is considered stale (server likely crashed
 // mid-generation). It can be reclaimed so a paid user is never stuck forever.
