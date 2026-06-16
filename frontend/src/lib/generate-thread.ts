@@ -223,8 +223,18 @@ export async function generateHook(topic: string, tone: Tone): Promise<string> {
   return parseHook(raw);
 }
 
+// Combine an optional pinned first tweet with the model's continuation, capped at
+// `length`. When firstTweet is null, the model's array is returned as-is.
+export function assembleThread(
+  firstTweet: string | null, rest: string[], length: number,
+): string[] {
+  if (!firstTweet) return rest;
+  return [firstTweet, ...rest].slice(0, length);
+}
+
 export async function generateThread(
   topic: string, tone: Tone, length: number,
+  opts?: { firstTweet?: string | null },
 ): Promise<string[]> {
   const config = resolveLlmConfig(process.env);
   if (config.provider !== 'ollama' && !config.apiKey) {
@@ -232,15 +242,23 @@ export async function generateThread(
       `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
     );
   }
+  const firstTweet = opts?.firstTweet ?? null;
+  const wanted = firstTweet ? length - 1 : length;
   const system = [
     'You are an expert X (Twitter) thread writer.',
     'Return ONLY a JSON object of the form {"tweets": ["...", "..."]} — one string per tweet.',
     'No markdown fences, no commentary, no numbering prefixes.',
     'Each tweet must be under 270 characters.',
-    'Tweet 1 must be a strong hook. The last tweet wraps up with a takeaway or CTA.',
+    firstTweet
+      ? 'Tweet 1 is already written (given below). Write ONLY the remaining tweets that continue it; do NOT repeat tweet 1.'
+      : 'Tweet 1 must be a strong hook.',
+    'The last tweet wraps up with a takeaway or CTA.',
     'Write in the same language as the topic given by the user.',
   ].join(' ');
-  const user = `Topic: ${topic}\nNumber of tweets: ${length}\nStyle: ${TONE_GUIDE[tone]}`;
+  const user = firstTweet
+    ? `Topic: ${topic}\nTweet 1 (already written): ${firstTweet}\nNumber of additional tweets to write: ${wanted}\nStyle: ${TONE_GUIDE[tone]}`
+    : `Topic: ${topic}\nNumber of tweets: ${length}\nStyle: ${TONE_GUIDE[tone]}`;
   const raw = await callLlm(config, system, user);
-  return parseThreadJson(raw);
+  const rest = parseThreadJson(raw);
+  return assembleThread(firstTweet, rest, length);
 }

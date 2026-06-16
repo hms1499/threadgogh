@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseThreadJson, resolveLlmConfig, extractText, parseHook } from '../generate-thread';
+import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread } from '../generate-thread';
 
 describe('parseThreadJson', () => {
   it('parses a plain JSON array', () => {
@@ -95,6 +95,20 @@ describe('parseHook', () => {
 
   it('throws on a whitespace-only string', () => {
     expect(() => parseHook('"   "')).toThrow();
+  });
+});
+
+describe('assembleThread', () => {
+  it('pins the given first tweet and appends the rest', () => {
+    expect(assembleThread('HOOK', ['b', 'c'], 3)).toEqual(['HOOK', 'b', 'c']);
+  });
+
+  it('trims to length when the model returns too many', () => {
+    expect(assembleThread('HOOK', ['b', 'c', 'd', 'e'], 3)).toEqual(['HOOK', 'b', 'c']);
+  });
+
+  it('returns the rest unchanged when no first tweet is pinned', () => {
+    expect(assembleThread(null, ['a', 'b'], 5)).toEqual(['a', 'b']);
   });
 });
 
