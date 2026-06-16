@@ -184,9 +184,9 @@ export default function Home() {
               icon={<HistoryOutlined />}
               onClick={() => setHistoryOpen(true)}
               style={{
-                background: 'rgba(8,14,28,0.55)',
-                borderColor: 'rgba(61,90,173,0.6)',
-                color: '#e8eaf6',
+                background: 'var(--vg-glass)',
+                borderColor: 'var(--vg-glass-border)',
+                color: 'var(--vg-on-art)',
                 backdropFilter: 'blur(8px)',
               }}
             >
@@ -198,9 +198,9 @@ export default function Home() {
             icon={<WalletOutlined />}
             onClick={toggleWallet}
             style={{
-              background: 'rgba(8,14,28,0.55)',
-              borderColor: 'rgba(61,90,173,0.6)',
-              color: address ? '#9fa8d4' : '#e8eaf6',
+              background: 'var(--vg-glass)',
+              borderColor: 'var(--vg-glass-border)',
+              color: address ? 'var(--vg-on-art-soft)' : 'var(--vg-on-art)',
               backdropFilter: 'blur(8px)',
             }}
           >
@@ -214,16 +214,16 @@ export default function Home() {
             <Title
               level={1}
               className="tp-display"
-              style={{ margin: 0, fontWeight: 700, fontStyle: 'italic', color: '#fdfcf7', fontSize: 38 }}
+              style={{ margin: 0, fontWeight: 700, fontStyle: 'italic', color: 'var(--vg-on-art)', fontSize: 38 }}
             >
               ThreadGogh
             </Title>
           </Flex>
           <Paragraph
-            style={{ margin: '8px 0 0', fontSize: 15, color: '#cdd3ee', maxWidth: 440 }}
+            style={{ margin: '8px 0 0', fontSize: 15, color: 'var(--vg-on-art-soft)', maxWidth: 440 }}
           >
             AI writes X threads — pay per generate with STX or sBTC on Stacks.{' '}
-            <span style={{ color: 'rgba(205,211,238,0.6)' }}>No account, no subscription.</span>
+            <span style={{ color: 'var(--vg-on-art-faint)' }}>No account, no subscription.</span>
           </Paragraph>
         </div>
       </div>
@@ -238,11 +238,11 @@ export default function Home() {
       {/* ── Free hook preview ── */}
       {previewHook && thread.length === 0 && (
         <div className="tp-rise vg-gallery" style={{ marginTop: 20, padding: 16 }}>
-          <Text style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8593cf', marginBottom: 8 }}>
+          <Text style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--vg-on-art-faint)', marginBottom: 8 }}>
             Free preview — your hook
           </Text>
-          <Paragraph style={{ margin: 0, color: '#f0eee8', fontSize: 15 }}>{previewHook}</Paragraph>
-          <Text style={{ display: 'block', marginTop: 10, color: '#9fb0e0', fontSize: 13 }}>
+          <Paragraph style={{ margin: 0, color: 'var(--vg-on-art)', fontSize: 15 }}>{previewHook}</Paragraph>
+          <Text style={{ display: 'block', marginTop: 10, color: 'var(--vg-on-art-soft)', fontSize: 13 }}>
             Pay to unlock the full thread.
           </Text>
         </div>
@@ -271,7 +271,7 @@ export default function Home() {
             <Title
               level={4}
               className="tp-display"
-              style={{ margin: 0, color: '#f5d76e', fontStyle: 'italic' }}
+              style={{ margin: 0, color: 'var(--vg-star)', fontStyle: 'italic' }}
             >
               Your thread
             </Title>
@@ -283,7 +283,7 @@ export default function Home() {
                   loading={regenerating}
                   disabled={regenRemaining === 0 || regenerating}
                   onClick={regenerate}
-                  style={{ color: regenRemaining === 0 ? '#6b74a0' : '#9fa8d4' }}
+                  style={{ color: regenRemaining === 0 ? 'var(--vg-faint)' : 'var(--vg-muted)' }}
                 >
                   {regenRemaining === 0 ? 'No free re-rolls left' : `Regenerate (${regenRemaining} free)`}
                 </Button>
@@ -292,7 +292,7 @@ export default function Home() {
                 type="text"
                 size="small"
                 icon={copiedAll ? <CheckOutlined /> : <CopyOutlined />}
-                style={{ color: copiedAll ? '#7bc67e' : '#9fa8d4' }}
+                style={{ color: copiedAll ? 'var(--vg-success)' : 'var(--vg-muted)' }}
                 onClick={() => {
                   navigator.clipboard.writeText(thread.join('\n\n'));
                   message.success('Whole thread copied');
@@ -343,24 +343,24 @@ export default function Home() {
           </Text>
           <Flex gap={32} wrap>
             <Statistic
-              title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Threads sold</span>}
+              title={<span style={{ color: 'var(--vg-on-art-faint)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Threads sold</span>}
               value={stats.threads}
               formatter={(val) => <AnimatedCounter value={Number(val)} format={(n) => String(Math.round(n))} />}
-              styles={{ content: { fontFamily: 'var(--font-display)', color: '#f5d76e' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: 'var(--vg-star)' } }}
             />
             <Statistic
-              title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>STX revenue</span>}
+              title={<span style={{ color: 'var(--vg-on-art-faint)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>STX revenue</span>}
               value={stats.stxRevenue / 1_000_000}
               suffix="STX"
               formatter={(val) => <AnimatedCounter value={Number(val)} format={(n) => n.toFixed(2)} />}
-              styles={{ content: { fontFamily: 'var(--font-display)', color: '#f0eee8' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: 'var(--vg-on-art)' } }}
             />
             <Statistic
-              title={<span style={{ color: '#9fb0e0', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>sBTC revenue</span>}
+              title={<span style={{ color: 'var(--vg-on-art-faint)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>sBTC revenue</span>}
               value={stats.sbtcRevenue}
               suffix="sats"
               formatter={(val) => <AnimatedCounter value={Number(val)} format={(n) => Math.round(n).toLocaleString()} />}
-              styles={{ content: { fontFamily: 'var(--font-display)', color: '#f0eee8' } }}
+              styles={{ content: { fontFamily: 'var(--font-display)', color: 'var(--vg-on-art)' } }}
             />
           </Flex>
         </div>
