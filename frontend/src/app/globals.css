@@ -244,7 +244,7 @@ body::after {
   font-family: var(--font-display), Georgia, serif;
   font-style: italic;
   font-size: 13px;
-  color: #c9b85e;
+  color: var(--vg-gold);
   letter-spacing: 0.02em;
 }
 
@@ -252,7 +252,7 @@ body::after {
   font-family: var(--font-display), Georgia, serif;
   font-style: italic;
   font-size: 14px;
-  color: #c9b85e;
+  color: var(--vg-gold);
   opacity: 0.85;
 }
 
@@ -476,4 +476,62 @@ body::after {
   .vg-loader__caption {
     animation: none !important;
   }
+}
+
+/* ─── Light theme identity (Sunflowers daylight) ──────────────── */
+
+/* Cream daylight background — warm sunflower glows, no night swirls. */
+html[data-theme="light"] body {
+  background-color: var(--vg-night);
+  background-image:
+    radial-gradient(circle 200px at 84% 10%, rgba(217, 154, 10, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 520px 300px at 15% 22%, rgba(244, 211, 130, 0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 360px at 80% 68%, rgba(232, 196, 120, 0.45) 0%, transparent 70%),
+    linear-gradient(170deg, #fbf4dc 0%, var(--vg-night) 50%, var(--vg-deep) 100%);
+}
+
+/* Daylight has no starfield, and the night brush-stroke overlay is hidden
+   for a clean cream canvas. */
+html[data-theme="light"] body::before,
+html[data-theme="light"] body::after {
+  display: none;
+}
+
+/* Hero shows Sunflowers in daylight, with a cream scrim so dark text reads. */
+html[data-theme="light"] .vg-hero::before {
+  background-image: url("/sunflowers.jpg");
+  background-position: center 40%;
+}
+html[data-theme="light"] .vg-hero::after {
+  background:
+    linear-gradient(180deg, rgba(250, 243, 221, 0.05) 0%, rgba(250, 243, 221, 0.40) 52%, rgba(250, 243, 221, 0.94) 100%),
+    linear-gradient(90deg, rgba(250, 243, 221, 0.55) 0%, transparent 55%);
+}
+
+/* Gallery placard: lighten the Sunflowers scrim for cream surfaces. */
+html[data-theme="light"] .vg-gallery {
+  border-color: rgba(194, 116, 10, 0.35);
+  background-color: rgba(250, 243, 221, 0.85);
+  background-image:
+    linear-gradient(100deg, rgba(250, 243, 221, 0.96) 34%, rgba(250, 243, 221, 0.62) 56%, rgba(250, 243, 221, 0.15) 100%),
+    url("/sunflowers.jpg");
+}
+
+/* History drawer: lighter scrim mask in daylight. */
+html[data-theme="light"] .vg-drawer__mask {
+  background: rgba(60, 47, 16, 0.35);
+}
+
+/* ─── Theme toggle icon ───────────────────────────────────────── */
+.vg-theme-toggle__icon {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.vg-theme-toggle:hover .vg-theme-toggle__icon {
+  transform: rotate(40deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .vg-theme-toggle__icon { transition: none; }
 }
