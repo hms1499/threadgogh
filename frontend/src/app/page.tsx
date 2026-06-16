@@ -14,7 +14,7 @@ import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } fr
 const { Title, Paragraph, Text } = Typography;
 
 type Quote = {
-  invoiceId: string; priceStx: number; priceSbtc: number; expiresAt: string;
+  invoiceId: string; priceStx: number; priceSbtc: number; expiresAt: string; previewHook?: string | null;
 };
 
 export default function Home() {
@@ -26,6 +26,7 @@ export default function Home() {
   const [thread, setThread] = useState<string[]>([]);
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string>();
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
+  const [previewHook, setPreviewHook] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -77,6 +78,7 @@ export default function Home() {
       }
       const data = await genRes.json();
       setThread(data.thread);
+      setPreviewHook(null);
       setPendingInvoiceId(undefined);
       setPhase('done');
       refreshStats();
@@ -87,7 +89,7 @@ export default function Home() {
   }
 
   async function handleGenerate(values: FormValues) {
-    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined);
+    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null);
     try {
       if (!getAddress()) {
         const addr = await connectWallet();
@@ -101,6 +103,7 @@ export default function Home() {
       });
       if (quoteRes.status !== 402) throw new Error('Could not get a quote');
       const quote: Quote = await quoteRes.json();
+      setPreviewHook(quote.previewHook ?? null);
 
       setPhase('awaiting-signature');
       const amount = values.token === 'STX' ? quote.priceStx : quote.priceSbtc;
@@ -198,6 +201,19 @@ export default function Home() {
       <div className="tp-rise" style={{ animationDelay: '0.08s' }}>
         <ThreadForm onSubmit={handleGenerate} disabled={busy} />
       </div>
+
+      {/* ── Free hook preview ── */}
+      {previewHook && thread.length === 0 && (
+        <div className="tp-rise vg-gallery" style={{ marginTop: 20, padding: 16 }}>
+          <Text style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8593cf', marginBottom: 8 }}>
+            Free preview — your hook
+          </Text>
+          <Paragraph style={{ margin: 0, color: '#f0eee8', fontSize: 15 }}>{previewHook}</Paragraph>
+          <Text style={{ display: 'block', marginTop: 10, color: '#9fb0e0', fontSize: 13 }}>
+            Pay to unlock the full thread.
+          </Text>
+        </div>
+      )}
 
       {/* ── Payment status ── */}
       <div style={{ marginTop: 20 }}>
