@@ -10,6 +10,7 @@ import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
+import { MAX_FREE_REGENS } from '@/lib/config';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -29,6 +30,9 @@ export default function Home() {
   const [previewHook, setPreviewHook] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [displayedInvoiceId, setDisplayedInvoiceId] = useState<string>();
+  const [regenRemaining, setRegenRemaining] = useState<number | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
   function refreshStats() {
@@ -78,6 +82,8 @@ export default function Home() {
       }
       const data = await genRes.json();
       setThread(data.thread);
+      setDisplayedInvoiceId(invoiceId);
+      setRegenRemaining(MAX_FREE_REGENS);
       setPreviewHook(null);
       setPendingInvoiceId(undefined);
       setPhase('done');
@@ -88,8 +94,33 @@ export default function Home() {
     }
   }
 
+  async function regenerate() {
+    if (!displayedInvoiceId) return;
+    setRegenerating(true);
+    setError(undefined);
+    try {
+      const res = await fetch('/api/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: displayedInvoiceId }),
+      });
+      if (res.status === 202) {
+        message.info('A re-roll is already in progress — try again in a moment.');
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      setThread(data.thread);
+      setRegenRemaining(data.regenRemaining);
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : 'Re-roll failed');
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   async function handleGenerate(values: FormValues) {
-    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null);
+    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null); setDisplayedInvoiceId(undefined); setRegenRemaining(null);
     try {
       if (!getAddress()) {
         const addr = await connectWallet();
@@ -242,20 +273,34 @@ export default function Home() {
             >
               Your thread
             </Title>
-            <Button
-              type="text"
-              size="small"
-              icon={copiedAll ? <CheckOutlined /> : <CopyOutlined />}
-              style={{ color: copiedAll ? '#7bc67e' : '#9fa8d4' }}
-              onClick={() => {
-                navigator.clipboard.writeText(thread.join('\n\n'));
-                message.success('Whole thread copied');
-                setCopiedAll(true);
-                setTimeout(() => setCopiedAll(false), 1400);
-              }}
-            >
-              {copiedAll ? 'Copied' : 'Copy all'}
-            </Button>
+            <Flex gap={8} align="center">
+              {regenRemaining != null && (
+                <Button
+                  type="text"
+                  size="small"
+                  loading={regenerating}
+                  disabled={regenRemaining === 0 || regenerating}
+                  onClick={regenerate}
+                  style={{ color: regenRemaining === 0 ? '#6b74a0' : '#9fa8d4' }}
+                >
+                  {regenRemaining === 0 ? 'No free re-rolls left' : `Regenerate (${regenRemaining} free)`}
+                </Button>
+              )}
+              <Button
+                type="text"
+                size="small"
+                icon={copiedAll ? <CheckOutlined /> : <CopyOutlined />}
+                style={{ color: copiedAll ? '#7bc67e' : '#9fa8d4' }}
+                onClick={() => {
+                  navigator.clipboard.writeText(thread.join('\n\n'));
+                  message.success('Whole thread copied');
+                  setCopiedAll(true);
+                  setTimeout(() => setCopiedAll(false), 1400);
+                }}
+              >
+                {copiedAll ? 'Copied' : 'Copy all'}
+              </Button>
+            </Flex>
           </Flex>
           {thread.map((t, i) => (
             <TweetCard key={i} text={t} index={i} total={thread.length} />
@@ -284,7 +329,7 @@ export default function Home() {
       >
         <HistoryPanel
           address={address}
-          onSelect={(t) => { setThread(t); setPhase('done'); setHistoryOpen(false); }}
+          onSelect={(t) => { setThread(t); setPhase('done'); setDisplayedInvoiceId(undefined); setRegenRemaining(null); setHistoryOpen(false); }}
         />
       </Drawer>
 
