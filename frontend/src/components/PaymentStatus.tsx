@@ -67,7 +67,7 @@ export function PaymentStatus({ phase, txid, error }: {
             href={`https://explorer.hiro.so/txid/${txid}?chain=${STACKS_NETWORK}`}
             target="_blank"
             rel="noreferrer"
-            style={{ fontSize: 12, color: '#9fa8d4' }}
+            style={{ fontSize: 12, color: 'var(--vg-muted)' }}
           >
             {txid.slice(0, 10)}…{txid.slice(-8)} <ExportOutlined />
           </Typography.Link>

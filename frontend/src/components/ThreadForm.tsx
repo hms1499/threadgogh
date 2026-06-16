@@ -17,7 +17,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
       fontSize: 11,
       textTransform: 'uppercase',
       letterSpacing: '0.1em',
-      color: '#8593cf',
+      color: 'var(--vg-faint)',
       fontFamily: 'var(--font-mono)',
     }}>
       {children}
