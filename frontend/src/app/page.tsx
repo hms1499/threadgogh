@@ -9,6 +9,7 @@ import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
 import { MAX_FREE_REGENS } from '@/lib/config';
 
@@ -176,6 +177,7 @@ export default function Home() {
       {/* ── Hero: the real Starry Night painting ── */}
       <div className="vg-hero tp-rise">
         <Flex gap={8} style={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}>
+          <ThemeToggle />
           {address && (
             <Button
               className="vg-wallet-btn"
