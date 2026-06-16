@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       thread: updated.thread_content,
-      regenRemaining: Math.max(0, MAX_FREE_REGENS - (updated.regen_count ?? used + 1)),
+      regenRemaining: Math.max(0, MAX_FREE_REGENS - (updated.regen_count ?? (used + 1))),
     });
   } catch (e) {
     console.error('[regenerate] unhandled error:', e);
