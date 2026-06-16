@@ -12,13 +12,13 @@ vi.mock('@/lib/invoices', () => ({
   isGeneratingStale: vi.fn(),
 }));
 vi.mock('@/lib/receipt', () => ({ fetchReceipt: vi.fn() }));
-vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn() }));
+vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn(), generateHook: vi.fn() }));
 vi.mock('@/lib/env', () => ({ assertServerEnv: vi.fn() }));
 
 import { POST } from '../route';
 import * as invoices from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
-import { generateThread } from '@/lib/generate-thread';
+import { generateThread, generateHook } from '@/lib/generate-thread';
 
 const m = vi.mocked;
 
@@ -63,6 +63,26 @@ describe('POST /api/generate — quote (branch 1)', () => {
     const res = await POST(req({ topic: 'x', tone: 'nope', length: 99 }));
     expect(res.status).toBe(400);
     expect(invoices.createInvoice).not.toHaveBeenCalled();
+  });
+
+  it('returns previewHook in the 402 when the hook generates', async () => {
+    m(generateHook).mockResolvedValue('a strong hook');
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: 'a strong hook' }));
+    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    expect(res.status).toBe(402);
+    expect((await res.json()).previewHook).toBe('a strong hook');
+    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, 'a strong hook');
+  });
+
+  it('still returns a 402 quote when the hook generation fails', async () => {
+    m(generateHook).mockRejectedValue(new Error('llm down'));
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: null }));
+    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    expect(res.status).toBe(402);
+    const json = await res.json();
+    expect(json.invoiceId).toBe(INVOICE_ID);
+    expect(json.previewHook ?? null).toBeNull();
+    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, null);
   });
 });
 
@@ -191,6 +211,19 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
     expect((await res.json()).thread).toEqual(['recovered']);
     expect(fetchReceipt).toHaveBeenCalledTimes(1);
     expect(generateThread).toHaveBeenCalledTimes(1);
+  });
+
+  it('reuses the stored preview_hook as tweet #1 when generating', async () => {
+    m(invoices.getInvoice).mockResolvedValue(baseInvoice({ preview_hook: 'pinned hook' }));
+    m(invoices.isExpired).mockReturnValue(false);
+    m(fetchReceipt).mockResolvedValue(stxReceipt);
+    m(invoices.claimInvoice).mockResolvedValue(true);
+    m(generateThread).mockResolvedValue(['pinned hook', 'b']);
+    m(invoices.saveGenerationAndConsume).mockImplementation(async (g) => g);
+    await POST(req({ invoiceId: INVOICE_ID, txId: '0xtx' }));
+    expect(generateThread).toHaveBeenCalledWith(
+      'bitcoin layer 2', 'educational', 5, { firstTweet: 'pinned hook' },
+    );
   });
 
   it('LLM fails after claim -> releases invoice for free retry, returns 500', async () => {

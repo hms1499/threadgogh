@@ -4,7 +4,7 @@ import {
   saveGenerationAndConsume, isExpired, isGeneratingStale,
 } from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
-import { generateThread } from '@/lib/generate-thread';
+import { generateThread, generateHook } from '@/lib/generate-thread';
 import { assertServerEnv } from '@/lib/env';
 import { CONTRACT, SBTC_CONTRACT, TONES, LENGTHS, type Tone } from '@/lib/config';
 
@@ -35,7 +35,14 @@ export async function POST(req: NextRequest) {
     if (!TONES.includes(tone) || !LENGTHS.includes(length as 5 | 8 | 12)) {
       return NextResponse.json({ error: 'invalid tone or length' }, { status: 400 });
     }
-    const invoice = await createInvoice(topic, tone, length);
+    // Generate the free preview hook. If it fails, degrade gracefully: still quote.
+    let previewHook: string | null = null;
+    try {
+      previewHook = await generateHook(topic, tone);
+    } catch (e) {
+      console.warn('[generate] preview hook failed, quoting without it:', e);
+    }
+    const invoice = await createInvoice(topic, tone, length, previewHook);
     return NextResponse.json({
       invoiceId: invoice.invoice_id,
       priceStx: invoice.price_stx,
@@ -43,6 +50,7 @@ export async function POST(req: NextRequest) {
       contract: CONTRACT,
       sbtcContract: SBTC_CONTRACT,
       expiresAt: invoice.expires_at,
+      previewHook,
     }, { status: 402 });
   }
 
@@ -103,7 +111,9 @@ export async function POST(req: NextRequest) {
 
   let thread: string[];
   try {
-    thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length);
+    thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length, {
+      firstTweet: invoice.preview_hook ?? null,
+    });
   } catch (e) {
     // LLM failed → release the lock so the user can retry for free (receipt stays on-chain).
     await releaseInvoice(invoice.invoice_id);
