@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseThreadJson, resolveLlmConfig, extractText } from '../generate-thread';
+import { parseThreadJson, resolveLlmConfig, extractText, parseHook } from '../generate-thread';
 
 describe('parseThreadJson', () => {
   it('parses a plain JSON array', () => {
@@ -66,6 +66,29 @@ describe('resolveLlmConfig', () => {
 
   it('throws for an unknown provider', () => {
     expect(() => resolveLlmConfig({ LLM_PROVIDER: 'foobar' })).toThrow();
+  });
+});
+
+describe('parseHook', () => {
+  it('returns a single string from a JSON array', () => {
+    expect(parseHook('["a strong hook"]')).toBe('a strong hook');
+  });
+
+  it('returns the string from a {"tweet": "..."} wrapper', () => {
+    expect(parseHook('{"tweet":"hooky"}')).toBe('hooky');
+  });
+
+  it('returns a bare quoted string', () => {
+    expect(parseHook('"just a hook"')).toBe('just a hook');
+  });
+
+  it('truncates a hook over 280 chars', () => {
+    const long = 'x'.repeat(300);
+    expect(parseHook(JSON.stringify([long])).length).toBeLessThanOrEqual(280);
+  });
+
+  it('throws when there is no usable string', () => {
+    expect(() => parseHook('{"a":1}')).toThrow();
   });
 });
 

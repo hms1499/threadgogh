@@ -175,6 +175,50 @@ export function parseThreadJson(raw: string): string[] {
   );
 }
 
+// Parse a single hook tweet from the LLM. Accepts a JSON array of one string,
+// a {"tweet": "..."} / {"hook": "..."} object, or a bare quoted string.
+export function parseHook(raw: string): string {
+  const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
+  let value: unknown;
+  try {
+    value = JSON.parse(cleaned);
+  } catch {
+    const slice = extractJsonSlice(cleaned);
+    value = slice === null ? cleaned : (() => { try { return JSON.parse(slice); } catch { return cleaned; } })();
+  }
+  let hook: unknown = value;
+  if (Array.isArray(value)) hook = value[0];
+  else if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    hook = obj.tweet ?? obj.hook ?? Object.values(obj).find((v) => typeof v === 'string');
+  }
+  if (typeof hook !== 'string' || hook.trim() === '') {
+    throw new Error('LLM hook output is not a usable string');
+  }
+  const trimmed = hook.trim();
+  return trimmed.length > 280 ? `${trimmed.slice(0, 277)}...` : trimmed;
+}
+
+// One free, cheap LLM call: just the opening hook tweet. Used at quote time.
+export async function generateHook(topic: string, tone: Tone): Promise<string> {
+  const config = resolveLlmConfig(process.env);
+  if (config.provider !== 'ollama' && !config.apiKey) {
+    throw new Error(
+      `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
+    );
+  }
+  const system = [
+    'You are an expert X (Twitter) thread writer.',
+    'Return ONLY a JSON object of the form {"tweet": "..."} — a single opening hook tweet.',
+    'No markdown fences, no commentary, no numbering.',
+    'The tweet must be under 270 characters and be a strong, scroll-stopping hook.',
+    'Write in the same language as the topic given by the user.',
+  ].join(' ');
+  const user = `Topic: ${topic}\nStyle: ${TONE_GUIDE[tone]}`;
+  const raw = await callLlm(config, system, user);
+  return parseHook(raw);
+}
+
 export async function generateThread(
   topic: string, tone: Tone, length: number,
 ): Promise<string[]> {
