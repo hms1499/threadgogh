@@ -40,7 +40,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${sora.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${sora.variable} ${mono.variable}`} suppressHydrationWarning>
       <body>
         {/* Set the theme before first paint to avoid a flash of the wrong theme. */}
         <script
