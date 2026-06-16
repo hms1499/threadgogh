@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const invoiceId = body && typeof body.invoiceId === 'string' ? body.invoiceId : '';
-  if (!invoiceId) {
+  // invoice ids are 32 random bytes, hex (64 chars) — reject junk before any DB read.
+  if (!/^[0-9a-f]{64}$/.test(invoiceId)) {
     return NextResponse.json({ error: 'invoiceId is required' }, { status: 400 });
   }
 
