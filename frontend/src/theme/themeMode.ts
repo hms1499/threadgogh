@@ -1,0 +1,18 @@
+// Pure, DOM-free theme-mode logic so it can be unit-tested without a browser.
+export type ThemeMode = 'light' | 'dark';
+
+export const THEME_STORAGE_KEY = 'tg-theme';
+
+export function isThemeMode(value: unknown): value is ThemeMode {
+  return value === 'light' || value === 'dark';
+}
+
+// Explicit stored choice always wins; otherwise follow the OS preference.
+export function resolveInitialMode(stored: string | null, prefersDark: boolean): ThemeMode {
+  if (isThemeMode(stored)) return stored;
+  return prefersDark ? 'dark' : 'light';
+}
+
+export function nextMode(mode: ThemeMode): ThemeMode {
+  return mode === 'dark' ? 'light' : 'dark';
+}
