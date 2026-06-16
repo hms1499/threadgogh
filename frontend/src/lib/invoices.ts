@@ -84,6 +84,7 @@ export type Generation = {
   amount: number;
   tx_id: string;
   thread_content: string[];
+  regen_count?: number;
 };
 
 export async function getGeneration(invoiceId: string): Promise<Generation | null> {
@@ -108,4 +109,22 @@ export async function saveGenerationAndConsume(gen: Generation): Promise<Generat
   await supabase.from('invoices')
     .update({ status: 'consumed' }).eq('invoice_id', gen.invoice_id);
   return gen;
+}
+
+// Compare-and-swap re-roll: overwrite the thread and bump regen_count only if the
+// row still has the regen_count we read (expectedCount). A concurrent re-roll that
+// already bumped the counter makes this match zero rows -> returns null (caller treats
+// it as "in progress / retry"), so two clicks can never over-count or clobber.
+export async function regenerateGeneration(
+  invoiceId: string, newThread: string[], expectedCount: number,
+): Promise<Generation | null> {
+  const { data, error } = await supabase
+    .from('generations')
+    .update({ thread_content: newThread, regen_count: expectedCount + 1 })
+    .eq('invoice_id', invoiceId)
+    .eq('regen_count', expectedCount)
+    .select('*')
+    .maybeSingle();
+  if (error) throw new Error(`regenerateGeneration: ${error.message}`);
+  return data;
 }
