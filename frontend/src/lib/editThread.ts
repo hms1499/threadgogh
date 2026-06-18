@@ -11,3 +11,10 @@ export function applyEdit(thread: string[], index: number, draft: string): strin
   next[index] = draft;
   return next;
 }
+
+// Remove the tweet at `index`. Out-of-range is a no-op. The result may be an
+// empty array — the page resets to its idle/empty state in that case.
+export function deleteTweet(thread: string[], index: number): string[] {
+  if (index < 0 || index >= thread.length) return thread;
+  return thread.slice(0, index).concat(thread.slice(index + 1));
+}
