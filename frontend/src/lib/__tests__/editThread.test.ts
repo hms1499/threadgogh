@@ -10,6 +10,7 @@ describe('applyEdit', () => {
     const thread = ['a', 'b', 'c'];
     expect(applyEdit(thread, 1, '')).toEqual(['a', 'b', 'c']);
     expect(applyEdit(thread, 1, '   ')).toEqual(['a', 'b', 'c']);
+    expect(applyEdit(thread, 1, '')).toBe(thread);
   });
 
   it('preserves internal whitespace of a non-empty draft', () => {
@@ -17,8 +18,9 @@ describe('applyEdit', () => {
   });
 
   it('returns input unchanged for an out-of-range index', () => {
-    expect(applyEdit(['a', 'b'], 5, 'x')).toEqual(['a', 'b']);
-    expect(applyEdit(['a', 'b'], -1, 'x')).toEqual(['a', 'b']);
+    const thread = ['a', 'b'];
+    expect(applyEdit(thread, 5, 'x')).toBe(thread);
+    expect(applyEdit(thread, -1, 'x')).toBe(thread);
   });
 
   it('does not mutate the input array', () => {
@@ -38,8 +40,9 @@ describe('deleteTweet', () => {
   });
 
   it('returns input unchanged for an out-of-range index', () => {
-    expect(deleteTweet(['a', 'b'], 5)).toEqual(['a', 'b']);
-    expect(deleteTweet(['a', 'b'], -1)).toEqual(['a', 'b']);
+    const thread = ['a', 'b'];
+    expect(deleteTweet(thread, 5)).toBe(thread);
+    expect(deleteTweet(thread, -1)).toBe(thread);
   });
 
   it('does not mutate the input array', () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { Typography, Button, Flex, App, Input } from 'antd';
 import { CopyOutlined, CheckOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
@@ -32,6 +32,16 @@ export function TweetCard({ text, index, total, onEdit, onDelete }: {
   function cancelEdit() {
     setEditing(false);
   }
+
+  // A delete reorders the (index-keyed) list and feeds this instance a
+  // different `text` by key; a regenerate replaces every text. Drop any
+  // in-flight edit when the underlying text changes so a stale draft can't be
+  // committed onto the wrong tweet.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEditing(false);
+    setDraft(text);
+  }, [text]);
 
   // Each painting is brushed in a beat after the previous one — gallery-style stagger.
   // The delay is a custom property so the sheen pseudo-element inherits it too.
@@ -68,7 +78,7 @@ export function TweetCard({ text, index, total, onEdit, onDelete }: {
               // Cmd/Ctrl+Enter commits; plain Enter inserts a newline (tweets are multi-line).
               if (e.metaKey || e.ctrlKey) { e.preventDefault(); commitEdit(); }
             }}
-            onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); } }}
+            onKeyDown={(e) => { if (e.key === 'Escape') cancelEdit(); }}
             autoSize={{ minRows: 2 }}
             aria-label={`Edit tweet ${index + 1}`}
             style={{

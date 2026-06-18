@@ -49,10 +49,12 @@ export default function Home() {
   }
 
   function handleDeleteTweet(index: number) {
-    const next = deleteTweet(thread, index);
-    setThread(next);
-    // Deleting the last tweet returns the gallery to its empty/idle state.
-    if (next.length === 0) setPhase('idle');
+    setThread((t) => {
+      const next = deleteTweet(t, index);
+      // Deleting the last tweet returns the gallery to its empty/idle state.
+      if (next.length === 0) setPhase('idle');
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -173,6 +175,7 @@ export default function Home() {
   }
 
   const busy = !['idle', 'done', 'error', 'recover'].includes(phase);
+  const editable = phase === 'done' && !regenerating;
 
   async function toggleWallet() {
     if (address) {
@@ -316,9 +319,7 @@ export default function Home() {
               </Button>
             </Flex>
           </Flex>
-          {thread.map((t, i) => {
-            const editable = phase === 'done' && !regenerating;
-            return (
+          {thread.map((t, i) => (
               <TweetCard
                 key={i}
                 text={t}
@@ -327,8 +328,7 @@ export default function Home() {
                 onEdit={editable ? handleEditTweet : undefined}
                 onDelete={editable ? handleDeleteTweet : undefined}
               />
-            );
-          })}
+            ))}
         </Flex>
       )}
 
