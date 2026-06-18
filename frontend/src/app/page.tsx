@@ -12,6 +12,7 @@ import { EmptyGallery } from '@/components/EmptyGallery';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
 import { MAX_FREE_REGENS } from '@/lib/config';
+import { applyEdit, deleteTweet } from '@/lib/editThread';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -41,6 +42,17 @@ export default function Home() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d && typeof d.threads === 'number') setStats(d); })
       .catch(() => {});
+  }
+
+  function handleEditTweet(index: number, draft: string) {
+    setThread((t) => applyEdit(t, index, draft));
+  }
+
+  function handleDeleteTweet(index: number) {
+    const next = deleteTweet(thread, index);
+    setThread(next);
+    // Deleting the last tweet returns the gallery to its empty/idle state.
+    if (next.length === 0) setPhase('idle');
   }
 
   useEffect(() => {
@@ -304,9 +316,19 @@ export default function Home() {
               </Button>
             </Flex>
           </Flex>
-          {thread.map((t, i) => (
-            <TweetCard key={i} text={t} index={i} total={thread.length} />
-          ))}
+          {thread.map((t, i) => {
+            const editable = phase === 'done' && !regenerating;
+            return (
+              <TweetCard
+                key={i}
+                text={t}
+                index={i}
+                total={thread.length}
+                onEdit={editable ? handleEditTweet : undefined}
+                onDelete={editable ? handleDeleteTweet : undefined}
+              />
+            );
+          })}
         </Flex>
       )}
 
