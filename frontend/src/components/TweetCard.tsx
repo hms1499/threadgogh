@@ -2,11 +2,10 @@
 
 import { useState, type CSSProperties } from 'react';
 import { Typography, Button, Flex, App, Input } from 'antd';
-import { CopyOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons';
+import { CopyOutlined, CheckOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Paragraph, Text } = Typography;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- onDelete wired in Task 4
 export function TweetCard({ text, index, total, onEdit, onDelete }: {
   text: string; index: number; total: number;
   onEdit?: (index: number, draft: string) => void;
@@ -71,6 +70,7 @@ export function TweetCard({ text, index, total, onEdit, onDelete }: {
             }}
             onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); } }}
             autoSize={{ minRows: 2 }}
+            aria-label={`Edit tweet ${index + 1}`}
             style={{
               margin: '0 0 12px',
               fontSize: 15,
@@ -107,6 +107,16 @@ export function TweetCard({ text, index, total, onEdit, onDelete }: {
               </Button>
             ) : (
               <>
+                {onDelete && (
+                  <Button
+                    size="small"
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    onClick={() => onDelete(index)}
+                    style={{ color: 'var(--vg-faint)', fontSize: 12 }}
+                    aria-label="Delete tweet"
+                  />
+                )}
                 {onEdit && (
                   <Button
                     size="small"
