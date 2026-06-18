@@ -1,17 +1,38 @@
 'use client';
 
 import { useState, type CSSProperties } from 'react';
-import { Typography, Button, Flex, App } from 'antd';
-import { CopyOutlined, CheckOutlined } from '@ant-design/icons';
+import { Typography, Button, Flex, App, Input } from 'antd';
+import { CopyOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons';
 
 const { Paragraph, Text } = Typography;
 
-export function TweetCard({ text, index, total }: {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- onDelete wired in Task 4
+export function TweetCard({ text, index, total, onEdit, onDelete }: {
   text: string; index: number; total: number;
+  onEdit?: (index: number, draft: string) => void;
+  onDelete?: (index: number) => void;
 }) {
   const { message } = App.useApp();
   const [copied, setCopied] = useState(false);
-  const over = text.length > 280;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(text);
+
+  // While editing, length signals track the draft so the counter/over-frame
+  // stay live as the user types.
+  const value = editing ? draft : text;
+  const over = value.length > 280;
+
+  function startEdit() {
+    setDraft(text);
+    setEditing(true);
+  }
+  function commitEdit() {
+    onEdit?.(index, draft); // applyEdit reverts on empty/whitespace
+    setEditing(false);
+  }
+  function cancelEdit() {
+    setEditing(false);
+  }
 
   // Each painting is brushed in a beat after the previous one — gallery-style stagger.
   // The delay is a custom property so the sheen pseudo-element inherits it too.
@@ -35,39 +56,85 @@ export function TweetCard({ text, index, total }: {
               border: `1px solid ${over ? 'var(--vg-error-border)' : 'var(--vg-pill-border)'}`,
             }}
           >
-            {text.length}/280
+            {value.length}/280
           </Text>
         </Flex>
 
-        <Paragraph
-          style={{
-            whiteSpace: 'pre-wrap',
-            margin: '0 0 12px',
-            fontSize: 15,
-            lineHeight: 1.65,
-            color: 'var(--vg-canvas)',
-          }}
-        >
-          {text}
-        </Paragraph>
+        {editing ? (
+          <Input.TextArea
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onPressEnter={(e) => {
+              // Cmd/Ctrl+Enter commits; plain Enter inserts a newline (tweets are multi-line).
+              if (e.metaKey || e.ctrlKey) { e.preventDefault(); commitEdit(); }
+            }}
+            onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); cancelEdit(); } }}
+            autoSize={{ minRows: 2 }}
+            style={{
+              margin: '0 0 12px',
+              fontSize: 15,
+              lineHeight: 1.65,
+              color: 'var(--vg-canvas)',
+            }}
+          />
+        ) : (
+          <Paragraph
+            style={{
+              whiteSpace: 'pre-wrap',
+              margin: '0 0 12px',
+              fontSize: 15,
+              lineHeight: 1.65,
+              color: 'var(--vg-canvas)',
+            }}
+          >
+            {text}
+          </Paragraph>
+        )}
 
         {/* Artist's signature + copy */}
         <Flex justify="space-between" align="center">
           <Text className="vg-signature">Vincent&nbsp;✦</Text>
-          <Button
-            size="small"
-            type="text"
-            icon={copied ? <CheckOutlined /> : <CopyOutlined />}
-            style={{ color: copied ? 'var(--vg-success)' : 'var(--vg-faint)', fontSize: 12 }}
-            onClick={async () => {
-              await navigator.clipboard.writeText(text);
-              message.success('Tweet copied');
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1400);
-            }}
-          >
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
+          <Flex gap={4} align="center">
+            {editing ? (
+              <Button
+                size="small"
+                type="text"
+                onClick={commitEdit}
+                style={{ color: 'var(--vg-success)', fontSize: 12 }}
+              >
+                Done
+              </Button>
+            ) : (
+              <>
+                {onEdit && (
+                  <Button
+                    size="small"
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={startEdit}
+                    style={{ color: 'var(--vg-faint)', fontSize: 12 }}
+                  >
+                    Edit
+                  </Button>
+                )}
+                <Button
+                  size="small"
+                  type="text"
+                  icon={copied ? <CheckOutlined /> : <CopyOutlined />}
+                  style={{ color: copied ? 'var(--vg-success)' : 'var(--vg-faint)', fontSize: 12 }}
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(text);
+                    message.success('Tweet copied');
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1400);
+                  }}
+                >
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+              </>
+            )}
+          </Flex>
         </Flex>
       </div>
       </div>
