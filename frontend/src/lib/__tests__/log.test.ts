@@ -61,6 +61,12 @@ describe('log', () => {
     expect(o.err).toBe('plain string failure');
   });
 
+  it('serializes a BigInt field without throwing', () => {
+    expect(() => log.error('x.y', { amount: 100000n })).not.toThrow();
+    const o = parseLastLine(spyError);
+    expect(o.amount).toBe('100000'); // coerced to string, no precision loss
+  });
+
   it('merges arbitrary fields through', () => {
     log.warn('x.y', { invoiceId: 'i', txId: 't', payer: 'ST1', count: 3 });
     const o = parseLastLine(spyWarn);

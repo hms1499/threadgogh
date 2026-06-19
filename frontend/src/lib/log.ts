@@ -26,13 +26,19 @@ function normalize(fields?: Fields): Fields {
   return { ...rest, err: String(err) };
 }
 
+// BigInt has no JSON representation and would otherwise throw — and a logger must never
+// throw, least of all from inside a catch block. Coerce to string (no precision loss).
+function replacer(_key: string, value: unknown): unknown {
+  return typeof value === 'bigint' ? value.toString() : value;
+}
+
 function emit(level: Level, event: string, fields?: Fields): void {
   const line = JSON.stringify({
     ts: new Date().toISOString(),
     level,
     event,
     ...normalize(fields),
-  });
+  }, replacer);
   sinks[level](line);
 }
 
