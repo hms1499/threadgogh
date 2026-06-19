@@ -30,6 +30,11 @@ export const INVOICE_TTL_MINUTES = 15;
 // Free whole-thread re-rolls allowed per paid invoice (#2).
 export const MAX_FREE_REGENS = Number(process.env.MAX_FREE_REGENS ?? 3);
 
+// Caps the unauthenticated quote branch of /api/generate (LLM call + DB row per hit)
+// at RATE_LIMIT_QUOTE_MAX requests per IP per RATE_LIMIT_QUOTE_WINDOW_SEC seconds.
+export const RATE_LIMIT_QUOTE_MAX = Number(process.env.RATE_LIMIT_QUOTE_MAX ?? 10);
+export const RATE_LIMIT_QUOTE_WINDOW_SEC = Number(process.env.RATE_LIMIT_QUOTE_WINDOW_SEC ?? 60);
+
 // A 'generating' lock older than this is considered stale (server likely crashed
 // mid-generation). It can be reclaimed so a paid user is never stuck forever.
 export const GENERATING_STALE_MS = 2 * 60_000;
