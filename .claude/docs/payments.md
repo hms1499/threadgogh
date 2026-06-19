@@ -54,4 +54,5 @@ the `recover` phase instead of erroring:
 
 `redeem()` never throws — 402/202 loop back into `recover`; only unexpected errors go to
 the `error` phase. This guarantees a paid user can always re-fetch their thread, even
-after closing the tab (also recoverable via `GET /api/generation/[invoiceId]`).
+after closing the tab: re-POST `/api/generate` with the invoiceId and the consumed
+invoice returns the cached thread.
