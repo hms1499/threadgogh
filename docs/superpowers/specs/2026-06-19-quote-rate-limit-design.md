@@ -33,18 +33,20 @@ One row per IP, fixed window, atomic in Postgres.
 rate_limits(
   key          text primary key,
   count        int         not null,
-  window_start timestamptz not null,
-  expires_at   timestamptz not null
+  window_start timestamptz not null
 )
 ```
 
 RPC `check_rate_limit(p_key text, p_max int, p_window_secs int)`:
 `INSERT ... ON CONFLICT (key) DO UPDATE` — if the stored window has elapsed, reset
 `count = 1, window_start = now()`; otherwise `count = count + 1`. Returns
-`{ allowed boolean, retry_after_sec int }`. Single statement → atomic, race-free.
+`{ allowed boolean, retry_after_sec int }`. Single statement → atomic, race-free. The
+"window elapsed" test lives in one `stable` helper, `rl_window_expired(window_start,
+window_secs)`, called by both reset branches so they cannot drift.
 
-Table stays small (one row per active IP). Dead-row cleanup is optional pg_cron on
-`expires_at`, documented in the migration; not required for correctness.
+Expiry is derived (`window_start + window`), not stored. Table stays small (one row per
+active IP). Dead-row cleanup is optional pg_cron on `window_start` age, documented in the
+migration; not required for correctness.
 
 ### Policy
 Default **10 quotes / 60s / IP**. Configurable via `RATE_LIMIT_QUOTE_MAX` (10) and
