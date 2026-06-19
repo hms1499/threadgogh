@@ -45,8 +45,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const invoice = await getInvoice(invoiceId);
-    const generation = await getGeneration(invoiceId);
+    // Two independent reads on the same key — fetch them together rather than serially.
+    const [invoice, generation] = await Promise.all([
+      getInvoice(invoiceId),
+      getGeneration(invoiceId),
+    ]);
     // A re-roll only makes sense once a thread has been paid for and produced.
     if (!invoice || !generation) {
       return NextResponse.json({ error: 'nothing to regenerate' }, { status: 404 });
