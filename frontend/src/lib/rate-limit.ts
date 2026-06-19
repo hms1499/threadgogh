@@ -35,9 +35,12 @@ export async function checkRateLimit(
     });
     if (error) throw new Error(error.message);
     const row = Array.isArray(data) ? data[0] : data;
+    // A successful call with no row is still a non-answer — fail OPEN, same as the
+    // error path, rather than letting Boolean(undefined) silently block the user.
+    if (!row) return { allowed: true, retryAfterSec: 0 };
     return {
-      allowed: Boolean(row?.allowed),
-      retryAfterSec: Number(row?.retry_after_sec ?? 0),
+      allowed: Boolean(row.allowed),
+      retryAfterSec: Number(row.retry_after_sec ?? 0),
     };
   } catch (e) {
     log.warn('rate_limit.check_failed', { key, err: e });

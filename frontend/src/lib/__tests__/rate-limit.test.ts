@@ -53,6 +53,18 @@ describe('checkRateLimit', () => {
     expect(res.allowed).toBe(true);
   });
 
+  it('fails open on a successful but empty response (no row)', async () => {
+    rpc.mockResolvedValue({ data: [], error: null } as never);
+    const res = await checkRateLimit('quote:1.2.3.4', { max: 10, windowSec: 60 });
+    expect(res.allowed).toBe(true);
+  });
+
+  it('fails open when a successful response has null data', async () => {
+    rpc.mockResolvedValue({ data: null, error: null } as never);
+    const res = await checkRateLimit('quote:1.2.3.4', { max: 10, windowSec: 60 });
+    expect(res.allowed).toBe(true);
+  });
+
   it('fails open when the RPC throws', async () => {
     rpc.mockRejectedValue(new Error('network'));
     const res = await checkRateLimit('quote:1.2.3.4', { max: 10, windowSec: 60 });
