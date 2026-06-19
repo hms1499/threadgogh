@@ -2,7 +2,8 @@
 
 import { connect, disconnect, getLocalStorage, request } from '@stacks/connect';
 import { Cl, Pc } from '@stacks/transactions';
-import { CONTRACT, SBTC_CONTRACT, HIRO_API, STACKS_NETWORK } from './config';
+import { CONTRACT, SBTC_CONTRACT, HIRO_API, STACKS_NETWORK, APP_DOMAIN } from './config';
+import { buildHistoryMessage } from './auth-message';
 
 export async function connectWallet(): Promise<string> {
   await connect();
@@ -24,6 +25,17 @@ export async function signMessage(message: string): Promise<string> {
   const res = await request('stx_signMessage', { message });
   if (!res?.signature) throw new Error('Wallet did not return a signature');
   return res.signature;
+}
+
+// Sign-in-with-Stacks: build the canonical history message for `address`, have the
+// wallet sign it, and return the bundle the server's authenticateAddress expects.
+// Shared by history sign-in and re-roll auth so the signed bytes never drift.
+export async function signInWithWallet(
+  address: string,
+): Promise<{ address: string; message: string; signature: string }> {
+  const message = buildHistoryMessage(address, new Date().toISOString(), APP_DOMAIN, STACKS_NETWORK);
+  const signature = await signMessage(message);
+  return { address, message, signature };
 }
 
 export async function payInvoice(opts: {

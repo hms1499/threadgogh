@@ -10,9 +10,8 @@ import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { connectWallet, disconnectWallet, getAddress, payInvoice, signMessage, waitForTx } from '@/lib/stacks';
-import { buildHistoryMessage } from '@/lib/auth-message';
-import { APP_DOMAIN, STACKS_NETWORK, MAX_FREE_REGENS } from '@/lib/config';
+import { connectWallet, disconnectWallet, getAddress, payInvoice, signInWithWallet, waitForTx } from '@/lib/stacks';
+import { MAX_FREE_REGENS } from '@/lib/config';
 import { applyEdit, deleteTweet } from '@/lib/editThread';
 
 const { Title, Paragraph, Text } = Typography;
@@ -126,9 +125,7 @@ export default function Home() {
       if (res.status === 401) {
         const addr = getAddress() ?? address;
         if (!addr) throw new Error('Connect your wallet to re-roll.');
-        const signMsg = buildHistoryMessage(addr, new Date().toISOString(), APP_DOMAIN, STACKS_NETWORK);
-        const signature = await signMessage(signMsg);
-        res = await call({ address: addr, message: signMsg, signature });
+        res = await call(await signInWithWallet(addr));
       }
       if (res.status === 202) {
         message.info('A re-roll is already in progress — try again in a moment.');

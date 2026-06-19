@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { Typography, Tag, Flex, Button, App } from 'antd';
 import { SafetyOutlined } from '@ant-design/icons';
-import { signMessage } from '@/lib/stacks';
-import { buildHistoryMessage } from '@/lib/auth-message';
-import { APP_DOMAIN, STACKS_NETWORK } from '@/lib/config';
+import { signInWithWallet } from '@/lib/stacks';
 
 const { Text } = Typography;
 
@@ -42,9 +40,7 @@ export function HistoryPanel({ address, onSelect }: {
     try {
       let signIn = {};
       if (firstLoad) {
-        const message = buildHistoryMessage(address, new Date().toISOString(), APP_DOMAIN, STACKS_NETWORK);
-        const signature = await signMessage(message);
-        signIn = { address, message, signature };
+        signIn = await signInWithWallet(address);
       }
       const res = await fetch('/api/history', {
         method: 'POST',
