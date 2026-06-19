@@ -7,6 +7,7 @@ import { fetchReceipt } from '@/lib/receipt';
 import { generateThread, generateHook } from '@/lib/generate-thread';
 import { assertServerEnv } from '@/lib/env';
 import { clientIp, checkRateLimit } from '@/lib/rate-limit';
+import { log } from '@/lib/log';
 import {
   CONTRACT, SBTC_CONTRACT, TONES, LENGTHS,
   RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC, type Tone,
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     try {
       previewHook = await generateHook(topic, tone);
     } catch (e) {
-      console.warn('[generate] preview hook failed, quoting without it:', e);
+      log.warn('generate.preview_hook_failed', { err: e });
     }
     const invoice = await createInvoice(topic, tone, length, previewHook);
     return NextResponse.json({
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
     if (!isGeneratingStale(invoice)) {
       return NextResponse.json({ error: 'generation in progress, retry shortly' }, { status: 202 });
     }
-    console.warn(`[generate] reclaiming stale lock for invoice ${invoice.invoice_id}`);
+    log.warn('generate.stale_lock_reclaimed', { invoiceId: invoice.invoice_id });
   }
 
   // Verify the on-chain payment BEFORE checking expiry: a late-confirmed payment
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest) {
     // Unwrapped failures (DB, on-chain read, parsing) would otherwise surface as
     // an opaque 500 logged only server-side. Log with context and return the real
     // message so the client can show it.
-    console.error('[generate] unhandled error:', e);
+    log.error('generate.unhandled_error', { invoiceId: body.invoiceId, err: e });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'internal server error' },
       { status: 500 },

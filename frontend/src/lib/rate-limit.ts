@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { log } from './log';
 
 // Server-only. A fixed-window rate limiter backed by a Supabase RPC, used to cap the
 // unauthenticated quote branch of /api/generate (which costs an LLM call + a DB row).
@@ -39,7 +40,7 @@ export async function checkRateLimit(
       retryAfterSec: Number(row?.retry_after_sec ?? 0),
     };
   } catch (e) {
-    console.warn('[rate-limit] check failed, failing open:', e);
+    log.warn('rate_limit.check_failed', { key, err: e });
     return { allowed: true, retryAfterSec: 0 };
   }
 }

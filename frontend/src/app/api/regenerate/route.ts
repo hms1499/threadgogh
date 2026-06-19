@@ -3,6 +3,7 @@ import { getInvoice, getGeneration, regenerateGeneration } from '@/lib/invoices'
 import { generateThread } from '@/lib/generate-thread';
 import { assertServerEnv } from '@/lib/env';
 import { verifyHistoryAuth } from '@/lib/auth';
+import { log } from '@/lib/log';
 import {
   SESSION_COOKIE, verifySessionToken, createSessionToken, sessionCookieOptions,
 } from '@/lib/session';
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (mintCookie) res.cookies.set(SESSION_COOKIE, createSessionToken(address), sessionCookieOptions());
     return res;
   } catch (e) {
-    console.error('[regenerate] unhandled error:', e);
+    log.error('regenerate.unhandled_error', { invoiceId, err: e });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'internal server error' },
       { status: 500 },
