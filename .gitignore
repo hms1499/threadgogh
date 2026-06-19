@@ -18,3 +18,6 @@ contracts/node_modules/
 
 # Logs
 *.log
+
+# Local-only tooling (not committed)
+/tools/
