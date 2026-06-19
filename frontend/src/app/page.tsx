@@ -10,8 +10,9 @@ import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { connectWallet, disconnectWallet, getAddress, payInvoice, waitForTx } from '@/lib/stacks';
-import { MAX_FREE_REGENS } from '@/lib/config';
+import { connectWallet, disconnectWallet, getAddress, payInvoice, signMessage, waitForTx } from '@/lib/stacks';
+import { buildHistoryMessage } from '@/lib/auth-message';
+import { APP_DOMAIN, STACKS_NETWORK, MAX_FREE_REGENS } from '@/lib/config';
 import { applyEdit, deleteTweet } from '@/lib/editThread';
 
 const { Title, Paragraph, Text } = Typography;
@@ -114,11 +115,21 @@ export default function Home() {
     setRegenerating(true);
     setError(undefined);
     try {
-      const res = await fetch('/api/regenerate', {
+      const call = (auth: object) => fetch('/api/regenerate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: displayedInvoiceId }),
+        body: JSON.stringify({ invoiceId: displayedInvoiceId, ...auth }),
       });
+      // Try the existing session cookie first; only prompt the wallet to sign when
+      // there's no valid session, so repeat re-rolls don't re-prompt.
+      let res = await call({});
+      if (res.status === 401) {
+        const addr = getAddress() ?? address;
+        if (!addr) throw new Error('Connect your wallet to re-roll.');
+        const signMsg = buildHistoryMessage(addr, new Date().toISOString(), APP_DOMAIN, STACKS_NETWORK);
+        const signature = await signMessage(signMsg);
+        res = await call({ address: addr, message: signMsg, signature });
+      }
       if (res.status === 202) {
         message.info('A re-roll is already in progress — try again in a moment.');
         return;
