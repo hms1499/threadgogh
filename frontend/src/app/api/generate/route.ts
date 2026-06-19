@@ -6,7 +6,11 @@ import {
 import { fetchReceipt } from '@/lib/receipt';
 import { generateThread, generateHook } from '@/lib/generate-thread';
 import { assertServerEnv } from '@/lib/env';
-import { CONTRACT, SBTC_CONTRACT, TONES, LENGTHS, type Tone } from '@/lib/config';
+import { clientIp, checkRateLimit } from '@/lib/rate-limit';
+import {
+  CONTRACT, SBTC_CONTRACT, TONES, LENGTHS,
+  RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC, type Tone,
+} from '@/lib/config';
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,6 +38,17 @@ export async function POST(req: NextRequest) {
     }
     if (!TONES.includes(tone) || !LENGTHS.includes(length as 5 | 8 | 12)) {
       return NextResponse.json({ error: 'invalid tone or length' }, { status: 400 });
+    }
+    // Cap this unauthenticated branch per IP — only valid requests reach here, so junk
+    // never burns quota, and a bot can't run up the LLM bill + spam the invoices table.
+    const rl = await checkRateLimit(`quote:${clientIp(req)}`, {
+      max: RATE_LIMIT_QUOTE_MAX, windowSec: RATE_LIMIT_QUOTE_WINDOW_SEC,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'rate limit exceeded, slow down', retryAfterSec: rl.retryAfterSec },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
+      );
     }
     // Generate the free preview hook. If it fails, degrade gracefully: still quote.
     let previewHook: string | null = null;

@@ -14,11 +14,13 @@ vi.mock('@/lib/invoices', () => ({
 vi.mock('@/lib/receipt', () => ({ fetchReceipt: vi.fn() }));
 vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn(), generateHook: vi.fn() }));
 vi.mock('@/lib/env', () => ({ assertServerEnv: vi.fn() }));
+vi.mock('@/lib/rate-limit', () => ({ clientIp: vi.fn(), checkRateLimit: vi.fn() }));
 
 import { POST } from '../route';
 import * as invoices from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
 import { generateThread, generateHook } from '@/lib/generate-thread';
+import { clientIp, checkRateLimit } from '@/lib/rate-limit';
 
 const m = vi.mocked;
 
@@ -47,6 +49,9 @@ const stxReceipt = { payer: 'ST1PAYER', amount: 100000n, token: 'STX' as const, 
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: caller is under the rate limit.
+  m(clientIp).mockReturnValue('1.2.3.4');
+  m(checkRateLimit).mockResolvedValue({ allowed: true, retryAfterSec: 0 });
 });
 
 describe('POST /api/generate — quote (branch 1)', () => {
@@ -59,10 +64,28 @@ describe('POST /api/generate — quote (branch 1)', () => {
     expect(json.priceStx).toBe(100000);
   });
 
-  it('returns 400 for invalid tone/length', async () => {
+  it('returns 400 for invalid tone/length, without spending a rate-limit slot', async () => {
     const res = await POST(req({ topic: 'x', tone: 'nope', length: 99 }));
     expect(res.status).toBe(400);
     expect(invoices.createInvoice).not.toHaveBeenCalled();
+    // Junk is rejected before the limiter, so it never burns quota.
+    expect(checkRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('rate-limited quote -> 429 with Retry-After, no LLM call, no invoice created', async () => {
+    m(checkRateLimit).mockResolvedValue({ allowed: false, retryAfterSec: 42 });
+    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe('42');
+    expect((await res.json()).retryAfterSec).toBe(42);
+    expect(generateHook).not.toHaveBeenCalled();
+    expect(invoices.createInvoice).not.toHaveBeenCalled();
+  });
+
+  it('checks the rate limit before quoting, keyed by client IP', async () => {
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice());
+    await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    expect(checkRateLimit).toHaveBeenCalledWith('quote:1.2.3.4', { max: 10, windowSec: 60 });
   });
 
   it('returns previewHook in the 402 when the hook generates', async () => {
