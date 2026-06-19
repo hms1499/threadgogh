@@ -7,6 +7,8 @@ export type Receipt = {
   payer: string;
   amount: bigint;
   token: 'STX' | 'SBTC';
+  // burn-block-height at payment. Recorded for audit only — generation is NOT gated on
+  // confirmation depth. See "Confirmation depth / reorg risk" in .claude/docs/payments.md.
   paidAt: bigint;
 };
 

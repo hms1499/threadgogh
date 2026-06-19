@@ -56,3 +56,26 @@ the `recover` phase instead of erroring:
 the `error` phase. This guarantees a paid user can always re-fetch their thread, even
 after closing the tab: re-POST `/api/generate` with the invoiceId and the consumed
 invoice returns the cached thread.
+
+## Confirmation depth / reorg risk (accepted)
+
+`fetchReceipt` reads the contract's **current chain tip** via a read-only call; the
+server verifies the receipt and generates immediately, with no confirmation-depth wait.
+We deliberately do **not** gate generation on N confirmations (e.g. comparing the
+current burn height against the receipt's `paid-at`), and `paid-at` is recorded for
+audit only — never used as a gate.
+
+Why this is safe:
+
+- **No economic upside.** The only failure mode is a micro-reorg that un-mines a payment
+  *after* the thread was generated. The payment (`>= 0.1 STX` / `100 sats`) is on the
+  order of one generation's cost, so a reorged-away payment yields no profit.
+- **An attacker can't induce it.** Causing a Stacks reorg requires Bitcoin miner
+  collusion; it isn't something a caller can trigger on demand. Natural micro-reorgs are
+  rare and shallow.
+- **A confirmation wait would hurt more than it helps.** Blocking generation for N
+  confirmations adds minutes of latency to every paid request to defend against a
+  near-zero, unprofitable risk — a net-negative trade.
+
+If economics change (much higher prices, or batching many generations under one
+payment), revisit this: gate on `burn-block-height - paid-at >= N` before generating.
