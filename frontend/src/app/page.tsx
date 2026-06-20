@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Typography, Flex, Statistic, App, Drawer } from 'antd';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
-import { WalletOutlined, CopyOutlined, CheckOutlined, HistoryOutlined } from '@ant-design/icons';
+import { WalletOutlined, CopyOutlined, CheckOutlined, HistoryOutlined, TwitterOutlined } from '@ant-design/icons';
 import { ThreadForm, type FormValues } from '@/components/ThreadForm';
 import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
+import { PostThreadModal } from '@/components/PostThreadModal';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -31,6 +32,7 @@ export default function Home() {
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
   const [previewHook, setPreviewHook] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [displayedInvoiceId, setDisplayedInvoiceId] = useState<string>();
   const [regenRemaining, setRegenRemaining] = useState<number | null>(null);
@@ -299,6 +301,15 @@ export default function Home() {
               Your thread
             </Title>
             <Flex gap={8} align="center">
+              <Button
+                type="text"
+                size="small"
+                icon={<TwitterOutlined />}
+                onClick={() => setPostOpen(true)}
+                style={{ color: 'var(--vg-star)' }}
+              >
+                Post to X
+              </Button>
               {regenRemaining != null && (
                 <Button
                   type="text"
@@ -342,6 +353,9 @@ export default function Home() {
 
       {/* ── Empty state — before the first generation ── */}
       {thread.length === 0 && phase === 'idle' && <EmptyGallery />}
+
+      {/* ── Post the whole thread to X, one tweet at a time ── */}
+      <PostThreadModal thread={thread} open={postOpen} onClose={() => setPostOpen(false)} />
 
       {/* ── History — opened from the hero, not inline ── */}
       <Drawer

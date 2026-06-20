@@ -2,7 +2,8 @@
 
 import { useState, useEffect, type CSSProperties } from 'react';
 import { Typography, Button, Flex, App, Input } from 'antd';
-import { CopyOutlined, CheckOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { CopyOutlined, CheckOutlined, EditOutlined, DeleteOutlined, TwitterOutlined } from '@ant-design/icons';
+import { intentUrl } from '@/lib/postToX';
 
 const { Paragraph, Text } = Typography;
 
@@ -138,6 +139,16 @@ export function TweetCard({ text, index, total, onEdit, onDelete }: {
                     Edit
                   </Button>
                 )}
+                <Button
+                  size="small"
+                  type="text"
+                  icon={<TwitterOutlined />}
+                  style={{ color: 'var(--vg-faint)', fontSize: 12 }}
+                  onClick={() => window.open(intentUrl(text), '_blank', 'noopener,noreferrer')}
+                  aria-label={`Post tweet ${index + 1} to X`}
+                >
+                  Post
+                </Button>
                 <Button
                   size="small"
                   type="text"
