@@ -60,7 +60,9 @@ export async function POST(req: NextRequest) {
     // remaining free re-rolls and the existing thread stays intact.
     let thread: string[];
     try {
-      thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length);
+      thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length, {
+        language: invoice.language ?? null,
+      });
     } catch (e) {
       const message = e instanceof Error ? e.message : 'generation failed';
       return NextResponse.json({ error: `re-roll failed: ${message}` }, { status: 500 });

@@ -13,6 +13,7 @@ export type Invoice = {
   expires_at: string;
   generating_at?: string | null;
   preview_hook?: string | null;
+  language?: string | null;
 };
 
 export function isExpired(invoice: Pick<Invoice, 'expires_at'>): boolean {
@@ -28,7 +29,8 @@ export function isGeneratingStale(invoice: Pick<Invoice, 'generating_at'>): bool
 }
 
 export async function createInvoice(
-  topic: string, tone: string, length: number, previewHook?: string | null,
+  topic: string, tone: string, length: number,
+  previewHook?: string | null, language?: string | null,
 ): Promise<Invoice> {
   const invoice: Invoice = {
     invoice_id: crypto.randomBytes(32).toString('hex'),
@@ -38,6 +40,7 @@ export async function createInvoice(
     status: 'pending',
     expires_at: new Date(Date.now() + INVOICE_TTL_MINUTES * 60_000).toISOString(),
     preview_hook: previewHook ?? null,
+    language: language ?? null,
   };
   const { error } = await supabase.from('invoices').insert(invoice);
   if (error) throw new Error(`createInvoice: ${error.message}`);

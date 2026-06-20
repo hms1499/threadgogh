@@ -155,7 +155,7 @@ export default function Home() {
       const quoteRes = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: values.topic, tone: values.tone, length: values.length }),
+        body: JSON.stringify({ topic: values.topic, tone: values.tone, length: values.length, language: values.language }),
       });
       if (quoteRes.status !== 402) throw new Error('Could not get a quote');
       const quote: Quote = await quoteRes.json();

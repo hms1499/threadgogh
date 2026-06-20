@@ -42,3 +42,25 @@ export const GENERATING_STALE_MS = 2 * 60_000;
 export const TONES = ['educational', 'funny', 'threadboi'] as const;
 export type Tone = (typeof TONES)[number];
 export const LENGTHS = [5, 8, 12] as const;
+
+// Output language for the generated thread. 'auto' keeps the model's default
+// (match the topic's language); every other code forces the whole thread into
+// that language regardless of the topic's. `name` is the English language name
+// fed to the LLM; `label` is what the picker shows.
+export const LANGUAGES = [
+  { value: 'auto', label: '🌐 Auto', name: '' },
+  { value: 'en', label: 'English', name: 'English' },
+  { value: 'vi', label: 'Tiếng Việt', name: 'Vietnamese' },
+  { value: 'es', label: 'Español', name: 'Spanish' },
+  { value: 'fr', label: 'Français', name: 'French' },
+  { value: 'ja', label: '日本語', name: 'Japanese' },
+  { value: 'zh', label: '中文', name: 'Chinese' },
+] as const;
+export type LanguageCode = (typeof LANGUAGES)[number]['value'];
+export const LANGUAGE_CODES = LANGUAGES.map((l) => l.value) as readonly LanguageCode[];
+
+// English name for the LLM prompt, or '' for 'auto'/unknown (caller then falls
+// back to "same language as the topic"). Tolerant of null/undefined from the DB.
+export function languageName(code: string | null | undefined): string {
+  return LANGUAGES.find((l) => l.value === code)?.name ?? '';
+}

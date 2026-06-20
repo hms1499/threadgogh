@@ -1,10 +1,19 @@
-import type { Tone } from './config';
+import { languageName, type Tone } from './config';
 
 const TONE_GUIDE: Record<Tone, string> = {
   educational: 'clear, informative, expert but approachable tone',
   funny: 'witty, meme-aware humor, still delivers real substance',
   threadboi: 'punchy growth-hacker style, bold hooks, strategic emoji (incl. 🧵)',
 };
+
+// The system-prompt line that controls output language. A known code forces that
+// language; 'auto'/unknown/null defers to the topic's own language.
+export function languageInstruction(language?: string | null): string {
+  const name = languageName(language);
+  return name
+    ? `Write the entire thread in ${name}, regardless of the language of the topic.`
+    : 'Write in the same language as the topic given by the user.';
+}
 
 // ── Provider abstraction ──────────────────────────────────────────────
 // Switch LLM provider with just the LLM_PROVIDER env var (default: groq, free).
@@ -204,7 +213,7 @@ export function parseHook(raw: string): string {
 }
 
 // One free, cheap LLM call: just the opening hook tweet. Used at quote time.
-export async function generateHook(topic: string, tone: Tone): Promise<string> {
+export async function generateHook(topic: string, tone: Tone, language?: string | null): Promise<string> {
   const config = resolveLlmConfig(process.env);
   if (config.provider !== 'ollama' && !config.apiKey) {
     throw new Error(
@@ -216,7 +225,7 @@ export async function generateHook(topic: string, tone: Tone): Promise<string> {
     'Return ONLY a JSON object of the form {"tweet": "..."} — a single opening hook tweet.',
     'No markdown fences, no commentary, no numbering.',
     'The tweet must be under 270 characters and be a strong, scroll-stopping hook.',
-    'Write in the same language as the topic given by the user.',
+    languageInstruction(language),
   ].join(' ');
   const user = `Topic: ${topic}\nStyle: ${TONE_GUIDE[tone]}`;
   const raw = await callLlm(config, system, user);
@@ -234,7 +243,7 @@ export function assembleThread(
 
 export async function generateThread(
   topic: string, tone: Tone, length: number,
-  opts?: { firstTweet?: string | null },
+  opts?: { firstTweet?: string | null; language?: string | null },
 ): Promise<string[]> {
   const config = resolveLlmConfig(process.env);
   if (config.provider !== 'ollama' && !config.apiKey) {
@@ -253,7 +262,7 @@ export async function generateThread(
       ? 'Tweet 1 is already written (given below). Write ONLY the remaining tweets that continue it; do NOT repeat tweet 1.'
       : 'Tweet 1 must be a strong hook.',
     'The last tweet wraps up with a takeaway or CTA.',
-    'Write in the same language as the topic given by the user.',
+    languageInstruction(opts?.language),
   ].join(' ');
   const user = firstTweet
     ? `Topic: ${topic}\nTweet 1 (already written): ${firstTweet}\nNumber of additional tweets to write: ${wanted}\nStyle: ${TONE_GUIDE[tone]}`

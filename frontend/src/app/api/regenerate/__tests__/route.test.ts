@@ -122,8 +122,17 @@ describe('POST /api/regenerate', () => {
     const json = await res.json();
     expect(json.thread).toEqual(['new1', 'new2']);
     expect(json.regenRemaining).toBe(2); // 3 - 1
-    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5);
+    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { language: null });
     expect(invoices.regenerateGeneration).toHaveBeenCalledWith(INVOICE_ID, ['new1', 'new2'], 0);
+  });
+
+  it('re-rolls in the same language the invoice was created with', async () => {
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice({ language: 'vi' }));
+    m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 0 }));
+    m(generateThread).mockResolvedValue(['moi1', 'moi2']);
+    m(invoices.regenerateGeneration).mockResolvedValue(gen({ thread_content: ['moi1', 'moi2'], regen_count: 1 }));
+    await POST(req({ invoiceId: INVOICE_ID }));
+    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { language: 'vi' });
   });
 
   it('mints a session cookie when authenticated via a fresh signature', async () => {

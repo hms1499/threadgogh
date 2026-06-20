@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Input, Segmented, Button, Flex } from 'antd';
+import { Input, Segmented, Select, Button, Flex } from 'antd';
 import { ThunderboltFilled } from '@ant-design/icons';
-import { TONES, LENGTHS, type Tone } from '@/lib/config';
+import { TONES, LENGTHS, LANGUAGES, type Tone, type LanguageCode } from '@/lib/config';
 
 const TONE_LABELS: Record<Tone, string> = {
   educational: '📚 Educational',
@@ -25,19 +25,20 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export type FormValues = { topic: string; tone: Tone; length: number; token: 'STX' | 'SBTC' };
+export type FormValues = { topic: string; tone: Tone; length: number; language: LanguageCode; token: 'STX' | 'SBTC' };
 
 export function ThreadForm({ onSubmit, disabled }: {
   onSubmit: (v: FormValues) => void;
   disabled: boolean;
 }) {
-  const [topic, setTopic]   = useState('');
-  const [tone, setTone]     = useState<Tone>('educational');
-  const [length, setLength] = useState<number>(8);
-  const [token, setToken]   = useState<'STX' | 'SBTC'>('STX');
+  const [topic, setTopic]       = useState('');
+  const [tone, setTone]         = useState<Tone>('educational');
+  const [length, setLength]     = useState<number>(8);
+  const [language, setLanguage] = useState<LanguageCode>('auto');
+  const [token, setToken]       = useState<'STX' | 'SBTC'>('STX');
 
   function submit() {
-    if (topic.trim()) onSubmit({ topic: topic.trim(), tone, length, token });
+    if (topic.trim()) onSubmit({ topic: topic.trim(), tone, length, language, token });
   }
 
   return (
@@ -75,6 +76,16 @@ export function ThreadForm({ onSubmit, disabled }: {
             value={length}
             onChange={(v) => setLength(Number(v))}
             options={LENGTHS.map((l) => ({ label: `${l} tweets`, value: l }))}
+          />
+        </Flex>
+
+        <Flex vertical gap={8}>
+          <FieldLabel>Language</FieldLabel>
+          <Select
+            value={language}
+            onChange={(v) => setLanguage(v as LanguageCode)}
+            options={LANGUAGES.map((l) => ({ label: l.label, value: l.value }))}
+            style={{ width: '100%' }}
           />
         </Flex>
 

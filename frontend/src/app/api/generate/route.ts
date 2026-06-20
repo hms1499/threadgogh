@@ -9,8 +9,8 @@ import { assertServerEnv } from '@/lib/env';
 import { clientIp, checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/log';
 import {
-  CONTRACT, SBTC_CONTRACT, TONES, LENGTHS,
-  RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC, type Tone,
+  CONTRACT, SBTC_CONTRACT, TONES, LENGTHS, LANGUAGE_CODES,
+  RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC, type Tone, type LanguageCode,
 } from '@/lib/config';
 
 export async function POST(req: NextRequest) {
@@ -34,6 +34,9 @@ export async function POST(req: NextRequest) {
     const topic = typeof body.topic === 'string' ? body.topic.trim() : '';
     const tone = body.tone as Tone;
     const length = Number(body.length);
+    // Unknown/missing language falls back to 'auto' (match the topic) rather than
+    // rejecting — language is a soft preference, not a correctness gate.
+    const language: LanguageCode = LANGUAGE_CODES.includes(body.language) ? body.language : 'auto';
     if (!topic || topic.length > 300) {
       return NextResponse.json({ error: 'topic is required (max 300 chars)' }, { status: 400 });
     }
@@ -54,11 +57,11 @@ export async function POST(req: NextRequest) {
     // Generate the free preview hook. If it fails, degrade gracefully: still quote.
     let previewHook: string | null = null;
     try {
-      previewHook = await generateHook(topic, tone);
+      previewHook = await generateHook(topic, tone, language);
     } catch (e) {
       log.warn('generate.preview_hook_failed', { err: e });
     }
-    const invoice = await createInvoice(topic, tone, length, previewHook);
+    const invoice = await createInvoice(topic, tone, length, previewHook, language);
     return NextResponse.json({
       invoiceId: invoice.invoice_id,
       priceStx: invoice.price_stx,
@@ -129,6 +132,7 @@ export async function POST(req: NextRequest) {
   try {
     thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length, {
       firstTweet: invoice.preview_hook ?? null,
+      language: invoice.language ?? null,
     });
   } catch (e) {
     // LLM failed → release the lock so the user can retry for free (receipt stays on-chain).

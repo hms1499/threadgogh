@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread } from '../generate-thread';
+import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread, languageInstruction } from '../generate-thread';
+
+describe('languageInstruction', () => {
+  it('forces a known language by its English name', () => {
+    expect(languageInstruction('vi')).toBe(
+      'Write the entire thread in Vietnamese, regardless of the language of the topic.',
+    );
+    expect(languageInstruction('es')).toContain('in Spanish');
+  });
+
+  it('defers to the topic language for auto', () => {
+    expect(languageInstruction('auto')).toBe(
+      'Write in the same language as the topic given by the user.',
+    );
+  });
+
+  it('defers to the topic language for unknown, null, or undefined', () => {
+    const fallback = 'Write in the same language as the topic given by the user.';
+    expect(languageInstruction('klingon')).toBe(fallback);
+    expect(languageInstruction(null)).toBe(fallback);
+    expect(languageInstruction(undefined)).toBe(fallback);
+  });
+});
 
 describe('parseThreadJson', () => {
   it('parses a plain JSON array', () => {

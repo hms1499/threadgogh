@@ -94,7 +94,7 @@ describe('POST /api/generate — quote (branch 1)', () => {
     const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
     expect(res.status).toBe(402);
     expect((await res.json()).previewHook).toBe('a strong hook');
-    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, 'a strong hook');
+    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, 'a strong hook', 'auto');
   });
 
   it('still returns a 402 quote when the hook generation fails', async () => {
@@ -105,7 +105,23 @@ describe('POST /api/generate — quote (branch 1)', () => {
     const json = await res.json();
     expect(json.invoiceId).toBe(INVOICE_ID);
     expect(json.previewHook ?? null).toBeNull();
-    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, null);
+    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, null, 'auto');
+  });
+
+  it('passes a valid language through to the hook and the invoice', async () => {
+    m(generateHook).mockResolvedValue('un hook fuerte');
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: 'un hook fuerte', language: 'vi' }));
+    await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'vi' }));
+    expect(generateHook).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 'vi');
+    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, 'un hook fuerte', 'vi');
+  });
+
+  it('falls back to auto for an unknown language instead of rejecting', async () => {
+    m(generateHook).mockRejectedValue(new Error('hook off')); // isolate from prior mock state
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice());
+    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'klingon' }));
+    expect(res.status).toBe(402);
+    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, null, 'auto');
   });
 });
 
@@ -245,7 +261,20 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
     m(invoices.saveGenerationAndConsume).mockImplementation(async (g) => g);
     await POST(req({ invoiceId: INVOICE_ID, txId: '0xtx' }));
     expect(generateThread).toHaveBeenCalledWith(
-      'bitcoin layer 2', 'educational', 5, { firstTweet: 'pinned hook' },
+      'bitcoin layer 2', 'educational', 5, { firstTweet: 'pinned hook', language: null },
+    );
+  });
+
+  it('passes the invoice language through to generateThread', async () => {
+    m(invoices.getInvoice).mockResolvedValue(baseInvoice({ language: 'vi', preview_hook: 'pinned hook' }));
+    m(invoices.isExpired).mockReturnValue(false);
+    m(fetchReceipt).mockResolvedValue(stxReceipt);
+    m(invoices.claimInvoice).mockResolvedValue(true);
+    m(generateThread).mockResolvedValue(['t1', 't2']);
+    m(invoices.saveGenerationAndConsume).mockImplementation(async (g) => g);
+    await POST(req({ invoiceId: INVOICE_ID, txId: '0xtx' }));
+    expect(generateThread).toHaveBeenCalledWith(
+      'bitcoin layer 2', 'educational', 5, { firstTweet: 'pinned hook', language: 'vi' },
     );
   });
 
