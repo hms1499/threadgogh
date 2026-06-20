@@ -37,6 +37,7 @@ export default function Home() {
   const [displayedInvoiceId, setDisplayedInvoiceId] = useState<string>();
   const [regenRemaining, setRegenRemaining] = useState<number | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [rerollingIndex, setRerollingIndex] = useState<number | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
 
   function refreshStats() {
@@ -111,24 +112,30 @@ export default function Home() {
     }
   }
 
+  // Shared auth dance for both whole-thread and per-tweet re-rolls: try the session
+  // cookie first, only prompting the wallet to sign when there's no valid session,
+  // so repeat re-rolls don't re-prompt.
+  async function postRegenerate(payload: object) {
+    const call = (auth: object) => fetch('/api/regenerate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, ...auth }),
+    });
+    let res = await call({});
+    if (res.status === 401) {
+      const addr = getAddress() ?? address;
+      if (!addr) throw new Error('Connect your wallet to re-roll.');
+      res = await call(await signInWithWallet(addr));
+    }
+    return res;
+  }
+
   async function regenerate() {
     if (!displayedInvoiceId) return;
     setRegenerating(true);
     setError(undefined);
     try {
-      const call = (auth: object) => fetch('/api/regenerate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: displayedInvoiceId, ...auth }),
-      });
-      // Try the existing session cookie first; only prompt the wallet to sign when
-      // there's no valid session, so repeat re-rolls don't re-prompt.
-      let res = await call({});
-      if (res.status === 401) {
-        const addr = getAddress() ?? address;
-        if (!addr) throw new Error('Connect your wallet to re-roll.');
-        res = await call(await signInWithWallet(addr));
-      }
+      const res = await postRegenerate({ invoiceId: displayedInvoiceId });
       if (res.status === 202) {
         message.info('A re-roll is already in progress — try again in a moment.');
         return;
@@ -141,6 +148,29 @@ export default function Home() {
       message.error(e instanceof Error ? e.message : 'Re-roll failed');
     } finally {
       setRegenerating(false);
+    }
+  }
+
+  // Re-roll a single tweet, keeping the rest. Sends the current thread as the base
+  // so inline edits to other tweets survive; shares the free re-roll budget.
+  async function rerollTweet(index: number) {
+    if (!displayedInvoiceId || regenRemaining === 0) return;
+    setRerollingIndex(index);
+    setError(undefined);
+    try {
+      const res = await postRegenerate({ invoiceId: displayedInvoiceId, tweetIndex: index, thread });
+      if (res.status === 202) {
+        message.info('A re-roll is already in progress — try again in a moment.');
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      setThread(data.thread);
+      setRegenRemaining(data.regenRemaining);
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : 'Re-roll failed');
+    } finally {
+      setRerollingIndex(null);
     }
   }
 
@@ -346,6 +376,8 @@ export default function Home() {
                 total={thread.length}
                 onEdit={editable ? handleEditTweet : undefined}
                 onDelete={editable ? handleDeleteTweet : undefined}
+                onReroll={editable && displayedInvoiceId && regenRemaining !== 0 ? rerollTweet : undefined}
+                rerolling={rerollingIndex === i}
               />
             ))}
         </Flex>

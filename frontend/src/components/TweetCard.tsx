@@ -2,15 +2,17 @@
 
 import { useState, useEffect, type CSSProperties } from 'react';
 import { Typography, Button, Flex, App, Input } from 'antd';
-import { CopyOutlined, CheckOutlined, EditOutlined, DeleteOutlined, TwitterOutlined } from '@ant-design/icons';
+import { CopyOutlined, CheckOutlined, EditOutlined, DeleteOutlined, TwitterOutlined, RedoOutlined } from '@ant-design/icons';
 import { intentUrl } from '@/lib/postToX';
 
 const { Paragraph, Text } = Typography;
 
-export function TweetCard({ text, index, total, onEdit, onDelete }: {
+export function TweetCard({ text, index, total, onEdit, onDelete, onReroll, rerolling }: {
   text: string; index: number; total: number;
   onEdit?: (index: number, draft: string) => void;
   onDelete?: (index: number) => void;
+  onReroll?: (index: number) => void;
+  rerolling?: boolean;
 }) {
   const { message } = App.useApp();
   const [copied, setCopied] = useState(false);
@@ -127,6 +129,19 @@ export function TweetCard({ text, index, total, onEdit, onDelete }: {
                     style={{ color: 'var(--vg-faint)', fontSize: 12 }}
                     aria-label="Delete tweet"
                   />
+                )}
+                {onReroll && (
+                  <Button
+                    size="small"
+                    type="text"
+                    icon={<RedoOutlined />}
+                    loading={rerolling}
+                    onClick={() => onReroll(index)}
+                    style={{ color: 'var(--vg-faint)', fontSize: 12 }}
+                    aria-label={`Re-roll tweet ${index + 1}`}
+                  >
+                    Re-roll
+                  </Button>
                 )}
                 {onEdit && (
                   <Button

@@ -5,7 +5,7 @@ vi.mock('@/lib/invoices', () => ({
   getGeneration: vi.fn(),
   regenerateGeneration: vi.fn(),
 }));
-vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn() }));
+vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn(), regenerateTweet: vi.fn() }));
 vi.mock('@/lib/env', () => ({ assertServerEnv: vi.fn() }));
 vi.mock('@/lib/auth', () => ({ verifyHistoryAuth: vi.fn() }));
 vi.mock('@/lib/session', () => ({
@@ -17,7 +17,7 @@ vi.mock('@/lib/session', () => ({
 
 import { POST } from '../route';
 import * as invoices from '@/lib/invoices';
-import { generateThread } from '@/lib/generate-thread';
+import { generateThread, regenerateTweet } from '@/lib/generate-thread';
 import { verifyHistoryAuth } from '@/lib/auth';
 import { verifySessionToken, SESSION_COOKIE } from '@/lib/session';
 
@@ -133,6 +133,46 @@ describe('POST /api/regenerate', () => {
     m(invoices.regenerateGeneration).mockResolvedValue(gen({ thread_content: ['moi1', 'moi2'], regen_count: 1 }));
     await POST(req({ invoiceId: INVOICE_ID }));
     expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { language: 'vi' });
+  });
+
+  it('per-tweet re-roll: rewrites only the targeted tweet, keeps the rest', async () => {
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice({ language: 'vi' }));
+    m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 0 }));
+    m(regenerateTweet).mockResolvedValue('fresh middle');
+    m(invoices.regenerateGeneration).mockResolvedValue(
+      gen({ thread_content: ['a', 'fresh middle', 'c'], regen_count: 1 }),
+    );
+    const res = await POST(req({ invoiceId: INVOICE_ID, tweetIndex: 1, thread: ['a', 'b', 'c'] }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).thread).toEqual(['a', 'fresh middle', 'c']);
+    // The whole-thread generator is never called for a per-tweet re-roll.
+    expect(generateThread).not.toHaveBeenCalled();
+    expect(regenerateTweet).toHaveBeenCalledWith('bitcoin layer 2', 'educational', ['a', 'b', 'c'], 1, { language: 'vi' });
+    expect(invoices.regenerateGeneration).toHaveBeenCalledWith(INVOICE_ID, ['a', 'fresh middle', 'c'], 0);
+  });
+
+  it('per-tweet re-roll: 400 for an out-of-range tweetIndex, no LLM call', async () => {
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice());
+    m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 0 }));
+    const res = await POST(req({ invoiceId: INVOICE_ID, tweetIndex: 9, thread: ['a', 'b'] }));
+    expect(res.status).toBe(400);
+    expect(regenerateTweet).not.toHaveBeenCalled();
+  });
+
+  it('per-tweet re-roll: 400 when the base thread is missing or not strings', async () => {
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice());
+    m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 0 }));
+    const res = await POST(req({ invoiceId: INVOICE_ID, tweetIndex: 0, thread: [1, 2] }));
+    expect(res.status).toBe(400);
+    expect(regenerateTweet).not.toHaveBeenCalled();
+  });
+
+  it('per-tweet re-roll: shares the free re-roll budget (429 when exhausted)', async () => {
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice());
+    m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 3 }));
+    const res = await POST(req({ invoiceId: INVOICE_ID, tweetIndex: 0, thread: ['a', 'b'] }));
+    expect(res.status).toBe(429);
+    expect(regenerateTweet).not.toHaveBeenCalled();
   });
 
   it('mints a session cookie when authenticated via a fresh signature', async () => {

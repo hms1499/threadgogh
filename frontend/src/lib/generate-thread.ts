@@ -232,6 +232,32 @@ export async function generateHook(topic: string, tone: Tone, language?: string 
   return parseHook(raw);
 }
 
+// Rewrite a SINGLE tweet in place, given the whole thread for context. Returns the
+// one replacement tweet (parseHook caps it at 280); the caller splices it back in.
+export async function regenerateTweet(
+  topic: string, tone: Tone, thread: string[], index: number,
+  opts?: { language?: string | null },
+): Promise<string> {
+  const config = resolveLlmConfig(process.env);
+  if (config.provider !== 'ollama' && !config.apiKey) {
+    throw new Error(
+      `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
+    );
+  }
+  const system = [
+    'You are an expert X (Twitter) thread writer.',
+    'You are given an existing thread and the 1-based position of ONE tweet to rewrite.',
+    'Return ONLY a JSON object of the form {"tweet": "..."} — just the rewritten tweet.',
+    'Rewrite ONLY that tweet so it still fits its place in the thread; keep the others as-is.',
+    'It must be under 270 characters. No numbering prefixes, no commentary, no fences.',
+    languageInstruction(opts?.language),
+  ].join(' ');
+  const numbered = thread.map((t, i) => `${i + 1}. ${t}`).join('\n');
+  const user = `Topic: ${topic}\nStyle: ${TONE_GUIDE[tone]}\nThread:\n${numbered}\n\nRewrite tweet number ${index + 1}.`;
+  const raw = await callLlm(config, system, user);
+  return parseHook(raw);
+}
+
 // Combine an optional pinned first tweet with the model's continuation, capped at
 // `length`. When firstTweet is null/empty, only the model's array is used.
 export function assembleThread(

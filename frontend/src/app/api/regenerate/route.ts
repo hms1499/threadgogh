@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getInvoice, getGeneration, regenerateGeneration } from '@/lib/invoices';
-import { generateThread } from '@/lib/generate-thread';
+import { generateThread, regenerateTweet } from '@/lib/generate-thread';
+import { applyEdit } from '@/lib/editThread';
 import { assertServerEnv } from '@/lib/env';
 import { authenticateAddress, applySessionCookie } from '@/lib/request-auth';
 import { log } from '@/lib/log';
-import { MAX_FREE_REGENS, type Tone } from '@/lib/config';
+import { MAX_FREE_REGENS, LENGTHS, type Tone } from '@/lib/config';
+
+// Upper bound on a client-supplied base thread for a per-tweet re-roll — the
+// longest a thread can be (max LENGTHS). Guards against an oversized payload.
+const MAX_THREAD = Math.max(...LENGTHS);
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,16 +61,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // A per-tweet re-roll (tweetIndex present) rewrites just one tweet against the
+    // client's current thread; otherwise the whole thread is regenerated from the
+    // topic. Both burn one free re-roll and persist via the same CAS below.
+    const perTweet = Number.isInteger(body.tweetIndex);
+
     // Generate BEFORE touching the counter: if the LLM fails the user keeps their
     // remaining free re-rolls and the existing thread stays intact.
     let thread: string[];
-    try {
-      thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length, {
-        language: invoice.language ?? null,
-      });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'generation failed';
-      return NextResponse.json({ error: `re-roll failed: ${message}` }, { status: 500 });
+    if (perTweet) {
+      const baseRaw: unknown = body.thread;
+      const index = body.tweetIndex as number;
+      if (!Array.isArray(baseRaw) || baseRaw.length === 0 || baseRaw.length > MAX_THREAD
+          || !baseRaw.every((t) => typeof t === 'string')) {
+        return NextResponse.json({ error: 'thread is required for a per-tweet re-roll' }, { status: 400 });
+      }
+      const base = baseRaw as string[];
+      if (index < 0 || index >= base.length) {
+        return NextResponse.json({ error: 'tweetIndex out of range' }, { status: 400 });
+      }
+      let replacement: string;
+      try {
+        replacement = await regenerateTweet(invoice.topic, invoice.tone as Tone, base, index, {
+          language: invoice.language ?? null,
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'generation failed';
+        return NextResponse.json({ error: `re-roll failed: ${message}` }, { status: 500 });
+      }
+      // Cap each base tweet at 280 (the client may send long inline edits) before swap.
+      const capped = base.map((t) => (t.length > 280 ? `${t.slice(0, 277)}...` : t));
+      thread = applyEdit(capped, index, replacement);
+    } else {
+      try {
+        thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length, {
+          language: invoice.language ?? null,
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'generation failed';
+        return NextResponse.json({ error: `re-roll failed: ${message}` }, { status: 500 });
+      }
     }
 
     // Compare-and-swap on the count we read: a concurrent re-roll that already bumped
