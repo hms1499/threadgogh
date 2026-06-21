@@ -43,7 +43,7 @@ export function PaymentStatus({ phase, txid, error }: {
       style={{ borderRadius: 12, padding: '16px 18px' }}
     >
       <Flex vertical gap={14}>
-        {(phase === 'quoting' || phase === 'generating') && (
+        {phase === 'quoting' && (
           <VanGoghLoader label={LOADER_LABEL[phase]} />
         )}
 

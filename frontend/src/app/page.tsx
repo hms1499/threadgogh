@@ -9,6 +9,8 @@ import type { PublicServiceDef } from '@/lib/services/types';
 import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { PostThreadModal } from '@/components/PostThreadModal';
+import { AppSplash } from '@/components/AppSplash';
+import { VanGoghCanvas } from '@/components/VanGoghCanvas';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -33,6 +35,7 @@ export default function Home() {
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
   const [services, setServices] = useState<PublicServiceDef[]>([]);
   const [servicesError, setServicesError] = useState(false);
+  const [servicesSettled, setServicesSettled] = useState(false);
   // Whether the currently displayed thread came from a chained service (true) or a
   // pack of standalone posts (false) — drives i/n numbering in the post-to-X flow.
   const [threadChained, setThreadChained] = useState(true);
@@ -75,7 +78,8 @@ export default function Home() {
     fetch('/api/services')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
       .then((d) => { if (Array.isArray(d?.services)) setServices(d.services); else throw new Error('bad payload'); })
-      .catch(() => setServicesError(true));
+      .catch(() => setServicesError(true))
+      .finally(() => setServicesSettled(true));
   }, []);
 
   // When a fresh thread finishes, bring it into view so the result isn't
@@ -243,6 +247,10 @@ export default function Home() {
 
   return (
     <main className="tp-shell" style={{ maxWidth: 640, margin: '0 auto', padding: '48px 20px 80px' }}>
+
+      {/* ── Van Gogh loading overlays ── */}
+      <AppSplash servicesSettled={servicesSettled} />
+      {phase === 'generating' && <VanGoghCanvas label="Painting your thread…" tx={txid} />}
 
       {/* ── Hero: the real Starry Night painting ── */}
       <div className="vg-hero tp-rise">
