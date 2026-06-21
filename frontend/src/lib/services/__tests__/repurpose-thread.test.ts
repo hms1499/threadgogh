@@ -15,6 +15,13 @@ describe('repurpose-thread validate', () => {
   it('rejects a bad length', () => {
     expect(s.validate({ ...ok, length: 7 })).toMatchObject({ ok: false });
   });
+  it('rejects a bad tone', () => {
+    expect(s.validate({ ...ok, tone: 'aggressive' })).toMatchObject({ ok: false });
+  });
+  it('maps an unknown language to auto', () => {
+    const r = s.validate({ ...ok, language: 'klingon' });
+    expect(r.ok && r.params.language).toBe('auto');
+  });
 });
 
 describe('repurpose-thread metadata + prompt', () => {
