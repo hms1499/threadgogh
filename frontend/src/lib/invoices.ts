@@ -1,12 +1,14 @@
 import crypto from 'crypto';
 import { supabase } from './supabase';
-import { PRICE_STX, PRICE_SBTC, INVOICE_TTL_MINUTES, GENERATING_STALE_MS } from './config';
+import { INVOICE_TTL_MINUTES, GENERATING_STALE_MS } from './config';
 
 export type Invoice = {
   invoice_id: string;
-  topic: string;
-  tone: string;
-  length: number;
+  service_id: string;
+  params: Record<string, unknown> | null;
+  topic?: string;
+  tone?: string;
+  length?: number;
   price_stx: number;
   price_sbtc: number;
   status: 'pending' | 'paid' | 'generating' | 'consumed';
@@ -28,19 +30,22 @@ export function isGeneratingStale(invoice: Pick<Invoice, 'generating_at'>): bool
   return new Date(invoice.generating_at).getTime() < Date.now() - GENERATING_STALE_MS;
 }
 
-export async function createInvoice(
-  topic: string, tone: string, length: number,
-  previewHook?: string | null, language?: string | null,
-): Promise<Invoice> {
+export async function createInvoice(args: {
+  serviceId: string;
+  params: Record<string, unknown>;
+  priceStx: number;
+  priceSbtc: number;
+  previewHook?: string | null;
+}): Promise<Invoice> {
   const invoice: Invoice = {
     invoice_id: crypto.randomBytes(32).toString('hex'),
-    topic, tone, length,
-    price_stx: PRICE_STX,
-    price_sbtc: PRICE_SBTC,
+    service_id: args.serviceId,
+    params: args.params,
+    price_stx: args.priceStx,
+    price_sbtc: args.priceSbtc,
     status: 'pending',
     expires_at: new Date(Date.now() + INVOICE_TTL_MINUTES * 60_000).toISOString(),
-    preview_hook: previewHook ?? null,
-    language: language ?? null,
+    preview_hook: args.previewHook ?? null,
   };
   const { error } = await supabase.from('invoices').insert(invoice);
   if (error) throw new Error(`createInvoice: ${error.message}`);
@@ -82,6 +87,7 @@ export async function releaseInvoice(invoiceId: string): Promise<void> {
 
 export type Generation = {
   invoice_id: string;
+  service_id: string;
   payer_address: string;
   token: string;
   amount: number;
