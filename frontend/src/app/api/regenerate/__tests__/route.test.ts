@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/lib/invoices', () => ({
   getInvoice: vi.fn(),
@@ -6,6 +6,12 @@ vi.mock('@/lib/invoices', () => ({
   regenerateGeneration: vi.fn(),
 }));
 vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn(), regenerateTweet: vi.fn() }));
+// Use the real registry so x-thread.generate/regenerateOne drive the mocked
+// generate-thread helpers; keep it spy-able for the explicit dispatch test.
+vi.mock('@/lib/services/registry', async (orig) => {
+  const actual = await orig<typeof import('@/lib/services/registry')>();
+  return { ...actual };
+});
 vi.mock('@/lib/env', () => ({ assertServerEnv: vi.fn() }));
 vi.mock('@/lib/auth', () => ({ verifyHistoryAuth: vi.fn() }));
 vi.mock('@/lib/session', () => ({
@@ -17,6 +23,7 @@ vi.mock('@/lib/session', () => ({
 
 import { POST } from '../route';
 import * as invoices from '@/lib/invoices';
+import * as registry from '@/lib/services/registry';
 import { generateThread, regenerateTweet } from '@/lib/generate-thread';
 import { verifyHistoryAuth } from '@/lib/auth';
 import { verifySessionToken, SESSION_COOKIE } from '@/lib/session';
@@ -34,7 +41,10 @@ function req(body: unknown, cookie?: string) {
 
 function consumedInvoice(overrides: Partial<invoices.Invoice> = {}): invoices.Invoice {
   return {
-    invoice_id: INVOICE_ID, topic: 'bitcoin layer 2', tone: 'educational', length: 5,
+    invoice_id: INVOICE_ID,
+    service_id: 'x-thread',
+    params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'auto' },
+    topic: 'bitcoin layer 2', tone: 'educational', length: 5,
     price_stx: 100000, price_sbtc: 100, status: 'consumed',
     expires_at: new Date().toISOString(), ...overrides,
   };
@@ -52,6 +62,11 @@ beforeEach(() => {
   // Default: caller is authenticated as the payer via a valid session cookie.
   m(verifySessionToken).mockReturnValue({ address: PAYER });
   m(verifyHistoryAuth).mockReturnValue({ ok: true });
+});
+
+// One test spies on the real registry; restore so it never leaks into others.
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('POST /api/regenerate', () => {
@@ -122,21 +137,25 @@ describe('POST /api/regenerate', () => {
     const json = await res.json();
     expect(json.thread).toEqual(['new1', 'new2']);
     expect(json.regenRemaining).toBe(2); // 3 - 1
-    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { language: null });
+    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { firstTweet: null, language: 'auto' });
     expect(invoices.regenerateGeneration).toHaveBeenCalledWith(INVOICE_ID, ['new1', 'new2'], 0);
   });
 
   it('re-rolls in the same language the invoice was created with', async () => {
-    m(invoices.getInvoice).mockResolvedValue(consumedInvoice({ language: 'vi' }));
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice({
+      params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'vi' },
+    }));
     m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 0 }));
     m(generateThread).mockResolvedValue(['moi1', 'moi2']);
     m(invoices.regenerateGeneration).mockResolvedValue(gen({ thread_content: ['moi1', 'moi2'], regen_count: 1 }));
     await POST(req({ invoiceId: INVOICE_ID }));
-    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { language: 'vi' });
+    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { firstTweet: null, language: 'vi' });
   });
 
   it('per-tweet re-roll: rewrites only the targeted tweet, keeps the rest', async () => {
-    m(invoices.getInvoice).mockResolvedValue(consumedInvoice({ language: 'vi' }));
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice({
+      params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'vi' },
+    }));
     m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 0 }));
     m(regenerateTweet).mockResolvedValue('fresh middle');
     m(invoices.regenerateGeneration).mockResolvedValue(
@@ -149,6 +168,24 @@ describe('POST /api/regenerate', () => {
     expect(generateThread).not.toHaveBeenCalled();
     expect(regenerateTweet).toHaveBeenCalledWith('bitcoin layer 2', 'educational', ['a', 'b', 'c'], 1, { language: 'vi' });
     expect(invoices.regenerateGeneration).toHaveBeenCalledWith(INVOICE_ID, ['a', 'fresh middle', 'c'], 0);
+  });
+
+  it('rerolls one tweet via the invoice service', async () => {
+    vi.spyOn(registry, 'getService').mockReturnValue({
+      id: 'x-thread', label: '', blurb: '', chained: true, priceStx: 1, priceSbtc: 1, fields: [],
+      validate: () => ({ ok: true, params: {} }),
+      generatePreview: async () => null,
+      generate: async () => [],
+      regenerateOne: async () => 'REROLLED',
+    } as never);
+    m(invoices.getInvoice).mockResolvedValue(consumedInvoice());
+    m(invoices.getGeneration).mockResolvedValue(gen({ regen_count: 0 }));
+    m(invoices.regenerateGeneration).mockImplementation(
+      async (_id: string, thread: string[]) => gen({ thread_content: thread, regen_count: 1 }),
+    );
+    const res = await POST(req({ invoiceId: INVOICE_ID, tweetIndex: 1, thread: ['a', 'b', 'c'] }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).thread).toEqual(['a', 'REROLLED', 'c']);
   });
 
   it('per-tweet re-roll: 400 for an out-of-range tweetIndex, no LLM call', async () => {

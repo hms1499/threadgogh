@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getInvoice, getGeneration, regenerateGeneration } from '@/lib/invoices';
-import { generateThread, regenerateTweet } from '@/lib/generate-thread';
+import { getService } from '@/lib/services/registry';
 import { applyEdit } from '@/lib/editThread';
 import { assertServerEnv } from '@/lib/env';
 import { authenticateAddress, applySessionCookie } from '@/lib/request-auth';
 import { log } from '@/lib/log';
-import { MAX_FREE_REGENS, LENGTHS, type Tone } from '@/lib/config';
+import { MAX_FREE_REGENS, LENGTHS } from '@/lib/config';
 
 // Upper bound on a client-supplied base thread for a per-tweet re-roll — the
 // longest a thread can be (max LENGTHS). Guards against an oversized payload.
@@ -82,9 +82,8 @@ export async function POST(req: NextRequest) {
       }
       let replacement: string;
       try {
-        replacement = await regenerateTweet(invoice.topic, invoice.tone as Tone, base, index, {
-          language: invoice.language ?? null,
-        });
+        const def = getService(invoice.service_id);
+        replacement = await def.regenerateOne(invoice.params ?? {}, base, index);
       } catch (e) {
         const message = e instanceof Error ? e.message : 'generation failed';
         return NextResponse.json({ error: `re-roll failed: ${message}` }, { status: 500 });
@@ -94,9 +93,8 @@ export async function POST(req: NextRequest) {
       thread = applyEdit(capped, index, replacement);
     } else {
       try {
-        thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length, {
-          language: invoice.language ?? null,
-        });
+        const def = getService(invoice.service_id);
+        thread = await def.generate(invoice.params ?? {}, { previewHook: null });
       } catch (e) {
         const message = e instanceof Error ? e.message : 'generation failed';
         return NextResponse.json({ error: `re-roll failed: ${message}` }, { status: 500 });
