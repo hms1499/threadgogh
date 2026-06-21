@@ -1,6 +1,8 @@
 import { languageName, type Tone } from './config';
 
-const TONE_GUIDE: Record<Tone, string> = {
+// Shared tone descriptions fed into LLM prompts. Exported so per-service prompt
+// builders (x-thread, repurpose-thread, hot-takes) reuse one source of truth.
+export const TONE_GUIDE: Record<Tone, string> = {
   educational: 'clear, informative, expert but approachable tone',
   funny: 'witty, meme-aware humor, still delivers real substance',
   threadboi: 'punchy growth-hacker style, bold hooks, strategic emoji (incl. 🧵)',

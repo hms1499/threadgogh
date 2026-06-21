@@ -1,17 +1,11 @@
 import { TONES, LANGUAGE_CODES, PRICE_STX, PRICE_SBTC, type Tone, type LanguageCode } from '@/lib/config';
 import {
-  resolveLlmConfig, assertApiKey, callLlm, parseThreadJson, parseHook, languageInstruction,
+  resolveLlmConfig, assertApiKey, callLlm, parseThreadJson, parseHook, languageInstruction, TONE_GUIDE,
 } from '@/lib/generate-thread';
 import type { ServiceDef, GenCtx, ValidateResult } from './types';
 
 export type HotTakesParams = { topic: string; tone: Tone; count: 3 | 5 | 8; language: LanguageCode };
 const COUNTS = [3, 5, 8] as const;
-
-const TONE_GUIDE: Record<Tone, string> = {
-  educational: 'clear, informative, expert but approachable tone',
-  funny: 'witty, meme-aware humor, still delivers real substance',
-  threadboi: 'punchy growth-hacker style, bold hooks, strategic emoji (incl. 🧵)',
-};
 
 export function buildHotTakesSystem(count: number, language: LanguageCode): string {
   return [

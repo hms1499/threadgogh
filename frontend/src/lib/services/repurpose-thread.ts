@@ -1,16 +1,10 @@
 import { TONES, LENGTHS, LANGUAGE_CODES, PRICE_STX, PRICE_SBTC, type Tone, type LanguageCode } from '@/lib/config';
 import {
-  resolveLlmConfig, assertApiKey, callLlm, parseThreadJson, parseHook, languageInstruction,
+  resolveLlmConfig, assertApiKey, callLlm, parseThreadJson, parseHook, languageInstruction, TONE_GUIDE,
 } from '@/lib/generate-thread';
 import type { ServiceDef, GenCtx, ValidateResult } from './types';
 
 export type RepurposeParams = { sourceText: string; tone: Tone; length: 5 | 8 | 12; language: LanguageCode };
-
-const TONE_GUIDE: Record<Tone, string> = {
-  educational: 'clear, informative, expert but approachable tone',
-  funny: 'witty, meme-aware humor, still delivers real substance',
-  threadboi: 'punchy growth-hacker style, bold hooks, strategic emoji (incl. 🧵)',
-};
 
 export function buildRepurposeSystem(length: number, language: LanguageCode): string {
   return [
