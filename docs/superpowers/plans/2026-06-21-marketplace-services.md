@@ -33,7 +33,7 @@ Service files need to call the LLM. `callLlm` is currently module-private and th
 **Interfaces:**
 - Produces: `assertApiKey(config: LlmConfig): void` (throws if a non-ollama provider has an empty key); `export async function callLlm(config: LlmConfig, system: string, user: string): Promise<string>`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `src/lib/__tests__/generate-thread.test.ts`:
 
@@ -59,12 +59,12 @@ describe('assertApiKey', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/generate-thread.test.ts -t assertApiKey`
 Expected: FAIL — `assertApiKey is not a function` / no export.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/lib/generate-thread.ts`: add the `DEFAULTS` key-env lookup into an exported guard and export `callLlm`. Add near the provider abstraction:
 
@@ -94,12 +94,12 @@ with:
   assertApiKey(config);
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npm test`
 Expected: PASS — all existing tests + the 3 new `assertApiKey` tests (162 total).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/lib/generate-thread.ts src/lib/__tests__/generate-thread.test.ts
@@ -146,7 +146,7 @@ export type PublicServiceDef = Pick<ServiceDef,
 ```
 - Produces (`x-thread.ts`): `export const xThreadService: ServiceDef<XThreadParams>` and `export type XThreadParams = { topic: string; tone: Tone; length: 5|8|12; language: LanguageCode }`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/services/__tests__/x-thread.test.ts`:
 
@@ -186,12 +186,12 @@ describe('x-thread metadata', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/x-thread.test.ts`
 Expected: FAIL — module `../x-thread` not found.
 
-- [ ] **Step 3: Implement types + service**
+- [x] **Step 3: Implement types + service**
 
 Create `src/lib/services/types.ts` with the **Interfaces → Produces (types.ts)** block above.
 
@@ -242,12 +242,12 @@ export const xThreadService: ServiceDef<XThreadParams> = {
 };
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/x-thread.test.ts`
 Expected: PASS (8 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/lib/services/types.ts src/lib/services/x-thread.ts src/lib/services/__tests__/x-thread.test.ts
@@ -268,7 +268,7 @@ A thread distilled from pasted source text. Needs its own prompt; reuses `callLl
 - Consumes: `callLlm`, `assertApiKey`, `resolveLlmConfig`, `parseThreadJson`, `parseHook` from `@/lib/generate-thread`; `languageInstruction` from `@/lib/generate-thread`.
 - Produces: `export const repurposeThreadService: ServiceDef<RepurposeParams>`, `export type RepurposeParams = { sourceText: string; tone: Tone; length: 5|8|12; language: LanguageCode }`, and a pure `export function buildRepurposeSystem(length: number, language: LanguageCode): string`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/services/__tests__/repurpose-thread.test.ts`:
 
@@ -303,12 +303,12 @@ describe('repurpose-thread metadata + prompt', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/repurpose-thread.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/lib/services/repurpose-thread.ts`:
 
@@ -410,12 +410,12 @@ export const repurposeThreadService: ServiceDef<RepurposeParams> = {
 };
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/repurpose-thread.test.ts`
 Expected: PASS (6 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/lib/services/repurpose-thread.ts src/lib/services/__tests__/repurpose-thread.test.ts
@@ -436,7 +436,7 @@ N standalone spicy posts (not a chained thread). `chained: false`. Param `count 
 - Consumes: same LLM helpers as Task 3.
 - Produces: `export const hotTakesService: ServiceDef<HotTakesParams>`, `export type HotTakesParams = { topic: string; tone: Tone; count: 3|5|8; language: LanguageCode }`, pure `export function buildHotTakesSystem(count: number, language: LanguageCode): string`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/services/__tests__/hot-takes.test.ts`:
 
@@ -472,12 +472,12 @@ describe('hot-takes metadata + prompt', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/hot-takes.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/lib/services/hot-takes.ts`:
 
@@ -573,12 +573,12 @@ export const hotTakesService: ServiceDef<HotTakesParams> = {
 };
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/hot-takes.test.ts`
 Expected: PASS (6 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/lib/services/hot-takes.ts src/lib/services/__tests__/hot-takes.test.ts
@@ -599,7 +599,7 @@ git commit -m "feat(services): hot-takes ServiceDef (standalone, unchained)"
 - Consumes: the three `ServiceDef` exports.
 - Produces: `export const SERVICES: Record<ServiceId, ServiceDef>`; `export function getService(id: string): ServiceDef` (throws `Error('unknown service')`); `export function publicRegistry(): PublicServiceDef[]`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/services/__tests__/registry.test.ts`:
 
@@ -634,12 +634,12 @@ describe('registry', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/registry.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/lib/services/registry.ts`:
 
@@ -667,12 +667,12 @@ export function publicRegistry(): PublicServiceDef[] {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/registry.test.ts`
 Expected: PASS (5 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/lib/services/registry.ts src/lib/services/__tests__/registry.test.ts
@@ -693,7 +693,7 @@ Public endpoint returning `publicRegistry()`.
 - Consumes: `publicRegistry` from `@/lib/services/registry`.
 - Produces: `export async function GET(): Promise<Response>` → `200 { services: PublicServiceDef[] }`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/app/api/services/__tests__/route.test.ts`:
 
@@ -714,12 +714,12 @@ describe('GET /api/services', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/app/api/services/__tests__/route.test.ts`
 Expected: FAIL — `../route` not found.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `src/app/api/services/route.ts`:
 
@@ -736,12 +736,12 @@ export async function GET() {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/app/api/services/__tests__/route.test.ts`
 Expected: PASS (1 test).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/app/api/services/route.ts src/app/api/services/__tests__/route.test.ts
@@ -763,7 +763,7 @@ Add `service_id`/`params` to types; change `createInvoice` to an object signatur
   - `createInvoice(args: { serviceId: string; params: Record<string, unknown>; priceStx: number; priceSbtc: number; previewHook?: string | null }): Promise<Invoice>`.
   - `Generation` gains `service_id: string`.
 
-- [ ] **Step 1: Edit the `Invoice` type**
+- [x] **Step 1: Edit the `Invoice` type**
 
 In `src/lib/invoices.ts`, change the `Invoice` type to:
 
@@ -785,7 +785,7 @@ export type Invoice = {
 };
 ```
 
-- [ ] **Step 2: Edit `createInvoice` to the object signature**
+- [x] **Step 2: Edit `createInvoice` to the object signature**
 
 Replace the existing `createInvoice` with:
 
@@ -815,16 +815,16 @@ export async function createInvoice(args: {
 
 Remove the now-unused `PRICE_STX, PRICE_SBTC` from the `./config` import in this file if they are no longer referenced (keep `INVOICE_TTL_MINUTES, GENERATING_STALE_MS`).
 
-- [ ] **Step 3: Edit `Generation` + `saveGenerationAndConsume`**
+- [x] **Step 3: Edit `Generation` + `saveGenerationAndConsume`**
 
 Add `service_id: string;` to the `Generation` type (after `invoice_id`). `saveGenerationAndConsume` already inserts the whole `gen` object, so no body change is needed beyond the type.
 
-- [ ] **Step 4: Verify it type-checks**
+- [x] **Step 4: Verify it type-checks**
 
 Run: `cd frontend && npm run build`
 Expected: build FAILS only in `src/app/api/generate/route.ts` and `src/app/api/regenerate/route.ts` (callers still use the old `createInvoice` signature / read `invoice.topic`). That is expected — those are fixed in Tasks 9–11. If any OTHER file fails to compile, fix it before committing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/lib/invoices.ts
@@ -840,7 +840,7 @@ Additive columns + backfill. Applied manually in Supabase (not run by tests).
 **Files:**
 - Create: `supabase/migrations/0006_invoices_service.sql`
 
-- [ ] **Step 1: Create the migration**
+- [x] **Step 1: Create the migration**
 
 Create `supabase/migrations/0006_invoices_service.sql`:
 
@@ -860,12 +860,12 @@ alter table generations
   add column if not exists service_id text not null default 'x-thread';
 ```
 
-- [ ] **Step 2: Verify SQL shape**
+- [x] **Step 2: Verify SQL shape**
 
 Run: `cd frontend && grep -c "add column" supabase/migrations/0006_invoices_service.sql`
 Expected: `3`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd frontend && git add supabase/migrations/0006_invoices_service.sql
@@ -888,7 +888,7 @@ Validate via the chosen service and create the invoice with its price + params.
 - Consumes: `getService`, `publicRegistry` not needed here — only `getService` from `@/lib/services/registry`.
 - Produces: 402 response now includes `service: def.id`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `src/app/api/generate/__tests__/route.test.ts` (it already mocks `@/lib/invoices`). Add a mock for the registry near the other `vi.mock` calls and tests:
 
@@ -930,12 +930,12 @@ it('invalid params → 400', async () => {
 
 (Use the existing test file's helpers/imports — `m`, `invoices`, `NextRequest`, and its `checkRateLimit` mock returning `{ allowed: true }`.)
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd frontend && npx vitest run src/app/api/generate/__tests__/route.test.ts`
 Expected: FAIL — Branch 1 still reads `body.topic` and `createInvoice` is called with old args.
 
-- [ ] **Step 3: Implement Branch 1**
+- [x] **Step 3: Implement Branch 1**
 
 In `src/app/api/generate/route.ts`, add import:
 
@@ -992,12 +992,12 @@ Replace the body of `if (!body.invoiceId) { ... }` with:
 
 Remove now-unused imports from `@/lib/config` (`TONES, LENGTHS, LANGUAGE_CODES, Tone, LanguageCode`) if Branch 2 no longer uses them after Task 10; if Task 10 isn't done yet, leave them and clean up in Task 10.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/app/api/generate/__tests__/route.test.ts -t 'quote\|service\|400\|402'`
 Expected: PASS for the new Branch 1 tests. (Branch 2 tests may still fail until Task 10 — acceptable mid-task; do not commit if a PREVIOUSLY-passing Branch 1 test regressed.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/app/api/generate/route.ts src/app/api/generate/__tests__/route.test.ts
@@ -1017,7 +1017,7 @@ Dispatch generation off `invoice.service_id` + `invoice.params`; never read serv
 **Interfaces:**
 - Consumes: `getService`, `invoice.service_id`, `invoice.params`, `invoice.preview_hook`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `src/app/api/generate/__tests__/route.test.ts` a test asserting dispatch uses the invoice, not the client body. Mock `getService` to a stub whose `generate` records its inputs:
 
@@ -1053,12 +1053,12 @@ it('Branch 2 generates from invoice.params/service, ignoring client body', async
 
 Match the file's existing `fetchReceipt` mock so the receipt check passes (STX amount ≥ 100000).
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/app/api/generate/__tests__/route.test.ts -t 'Branch 2 generates'`
 Expected: FAIL — route still calls `generateThread(invoice.topic, ...)`.
 
-- [ ] **Step 3: Implement Branch 2 dispatch**
+- [x] **Step 3: Implement Branch 2 dispatch**
 
 In `src/app/api/generate/route.ts`, replace:
 
@@ -1078,12 +1078,12 @@ with:
 
 Add `service_id: invoice.service_id` to the object passed to `saveGenerationAndConsume`. Remove the now-unused `generateThread` import and the unused `@/lib/config` thread imports (`TONES, LENGTHS, LANGUAGE_CODES, Tone, LanguageCode`). Keep `generateHook`? It is no longer used here — remove it too. Keep `CONTRACT, SBTC_CONTRACT, RATE_LIMIT_*`.
 
-- [ ] **Step 4: Run the full generate suite**
+- [x] **Step 4: Run the full generate suite**
 
 Run: `cd frontend && npx vitest run src/app/api/generate/__tests__/route.test.ts`
 Expected: PASS — Branch 1 + Branch 2 + all pre-existing generate tests. Update any pre-existing test that constructed an invoice without `service_id`/`params` to include them (`service_id: 'x-thread', params: {...}`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/app/api/generate/route.ts src/app/api/generate/__tests__/route.test.ts
@@ -1101,7 +1101,7 @@ git commit -m "feat(generate): Branch 2 generates via service registry from invo
 **Interfaces:**
 - Consumes: `getService`, `invoice.service_id`, `invoice.params`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `src/app/api/regenerate/__tests__/route.test.ts`, add a registry mock and a test that the rewritten tweet comes from `getService(invoice.service_id).regenerateOne`:
 
@@ -1124,12 +1124,12 @@ it('rerolls one tweet via the invoice service', async () => {
 
 (Reuse the file's existing auth/ownership/`gen()` helpers; the invoice mock must now include `service_id: 'x-thread'` and `params`.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/app/api/regenerate/__tests__/route.test.ts -t 'rerolls one tweet via the invoice service'`
 Expected: FAIL — route still calls `regenerateTweet(invoice.topic, ...)`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/app/api/regenerate/route.ts`, add `import { getService } from '@/lib/services/registry';`. Replace the `regenerateTweet(...)` call with:
 
@@ -1140,12 +1140,12 @@ In `src/app/api/regenerate/route.ts`, add `import { getService } from '@/lib/ser
 
 Remove the now-unused `regenerateTweet` import and any unused `@/lib/config` thread imports.
 
-- [ ] **Step 4: Run the regenerate suite**
+- [x] **Step 4: Run the regenerate suite**
 
 Run: `cd frontend && npx vitest run src/app/api/regenerate/__tests__/route.test.ts`
 Expected: PASS — new test + all pre-existing regenerate tests (update invoice mocks to include `service_id`/`params`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/app/api/regenerate/route.ts src/app/api/regenerate/__tests__/route.test.ts
@@ -1165,7 +1165,7 @@ git commit -m "feat(regenerate): dispatch single-tweet reroll via service regist
 **Interfaces:**
 - Produces: `withThreadNumbers(thread: string[], chained?: boolean): string[]` — default `chained = true` (back-compat). When `chained === false`, returns a copy with no markers.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `src/lib/__tests__/postToX.test.ts`:
 
@@ -1182,12 +1182,12 @@ describe('withThreadNumbers chained flag', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/postToX.test.ts -t 'chained flag'`
 Expected: FAIL — `withThreadNumbers` ignores the second argument.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/lib/postToX.ts`, change the signature and add an early return:
 
@@ -1199,12 +1199,12 @@ export function withThreadNumbers(thread: string[], chained: boolean = true): st
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/postToX.test.ts`
 Expected: PASS (existing + 2 new).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd frontend && git add src/lib/postToX.ts src/lib/__tests__/postToX.test.ts
@@ -1222,16 +1222,16 @@ git commit -m "feat(post-to-x): skip i/n numbering for unchained services"
 - Consumes: `withThreadNumbers(thread, chained)`.
 - Produces: `PostThreadModal({ thread, chained, open, onClose })` — `chained?: boolean` default `true`.
 
-- [ ] **Step 1: Add the prop and thread it through**
+- [x] **Step 1: Add the prop and thread it through**
 
 In `src/components/PostThreadModal.tsx`, change the props type to include `chained?: boolean;` and the function signature to destructure `chained = true`. Change `const numbered = withThreadNumbers(thread);` to `const numbered = withThreadNumbers(thread, chained);`.
 
-- [ ] **Step 2: Verify it builds**
+- [x] **Step 2: Verify it builds**
 
 Run: `cd frontend && npm run build`
 Expected: PASS (no type errors). If `page.tsx` doesn't yet pass `chained`, the default keeps it compiling.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd frontend && git add src/components/PostThreadModal.tsx
@@ -1255,7 +1255,7 @@ A data-driven form rendered from a service's `fields`. Extract pure helpers (tes
   - `clientValidate(fields: ServiceField[], params: Record<string, unknown>): string | null` — returns the first error message or `null`. Checks `required` non-empty and `maxLen` for text/textarea.
 - Produces (`ServiceForm.tsx`): `ServiceForm({ fields, params, onChange, disabled })` rendering AntD inputs by field type.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/services/__tests__/form.test.ts`:
 
@@ -1289,12 +1289,12 @@ describe('clientValidate', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/form.test.ts`
 Expected: FAIL — `../form` not found.
 
-- [ ] **Step 3: Implement the helpers**
+- [x] **Step 3: Implement the helpers**
 
 Create `src/lib/services/form.ts`:
 
@@ -1321,12 +1321,12 @@ export function clientValidate(fields: ServiceField[], params: Record<string, un
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/lib/services/__tests__/form.test.ts`
 Expected: PASS (5 tests).
 
-- [ ] **Step 5: Implement the component**
+- [x] **Step 5: Implement the component**
 
 Create `src/components/ServiceForm.tsx`. Follow the existing `ThreadForm.tsx` styling/tokens. Render by field type:
 
@@ -1372,12 +1372,12 @@ export function ServiceForm({ fields, params, onChange, disabled }: {
 }
 ```
 
-- [ ] **Step 6: Verify it builds**
+- [x] **Step 6: Verify it builds**
 
 Run: `cd frontend && npm run build`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd frontend && git add src/lib/services/form.ts src/lib/services/__tests__/form.test.ts src/components/ServiceForm.tsx
@@ -1397,7 +1397,7 @@ A segmented control to choose a service; shows label + price.
 - Consumes: `PublicServiceDef[]`.
 - Produces: `ServicePicker({ services, selectedId, onSelect, disabled })`.
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 Create `src/components/ServicePicker.tsx`:
 
@@ -1434,12 +1434,12 @@ export function ServicePicker({ services, selectedId, onSelect, disabled }: {
 }
 ```
 
-- [ ] **Step 2: Verify it builds**
+- [x] **Step 2: Verify it builds**
 
 Run: `cd frontend && npm run build`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd frontend && git add src/components/ServicePicker.tsx
@@ -1459,11 +1459,11 @@ Fetch the registry, render the picker + `ServiceForm`, submit `{ service, params
 **Interfaces:**
 - Consumes: `GET /api/services` → `{ services: PublicServiceDef[] }`; `defaultParams`, `clientValidate` from `@/lib/services/form`; `ServicePicker`, `ServiceForm`.
 
-- [ ] **Step 1: Load services + selection state**
+- [x] **Step 1: Load services + selection state**
 
 In `src/app/page.tsx`, add state: `services` (PublicServiceDef[]), `selectedId` (default `'x-thread'`), `params` (Record). On mount, `fetch('/api/services')` → set `services`; on error, set `services` to a single hardcoded `x-thread` stub `{ id:'x-thread', label:'X Thread', blurb:'', chained:true, priceStx, priceSbtc, fields:[] }` is insufficient for the form — instead, on error keep the picker hidden and render only what the API would have given; simplest: set `services = []` and, when empty, hide the picker and skip submission with an inline error "services unavailable, retry". (Marketplace is an enhancement; never crash.) When `services` loads or `selectedId` changes, reset `params = defaultParams(selectedService.fields)`.
 
-- [ ] **Step 2: Render picker + form + price**
+- [x] **Step 2: Render picker + form + price**
 
 Replace the existing hardcoded `ThreadForm` inputs with:
 
@@ -1479,15 +1479,15 @@ Replace the existing hardcoded `ThreadForm` inputs with:
 
 Show price from `selectedService.priceStx` / `priceSbtc` where the existing price UI lives.
 
-- [ ] **Step 3: Submit with service + params**
+- [x] **Step 3: Submit with service + params**
 
 In the quote request, send `JSON.stringify({ service: selectedId, params })`. Before sending, run `const err = clientValidate(selectedService.fields, params); if (err) { setError(err); return; }`. Keep the rest of the pay/generate flow unchanged.
 
-- [ ] **Step 4: Pass `chained` to PostThreadModal**
+- [x] **Step 4: Pass `chained` to PostThreadModal**
 
 Where `PostThreadModal` is rendered, pass `chained={selectedService?.chained ?? true}`.
 
-- [ ] **Step 5: Verify it builds + run the full test suite**
+- [x] **Step 5: Verify it builds + run the full test suite**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: build PASS; `npm test` PASS (all tests green).
@@ -1496,7 +1496,7 @@ Expected: build PASS; `npm test` PASS (all tests green).
 
 Run `npm run dev`, then in the browser: pick each of the three services, confirm the form fields change, submit `x-thread` end-to-end on testnet (quote → pay → generate), and confirm `hot-takes` post-to-X shows no `i/n` numbering.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd frontend && git add src/app/page.tsx src/components/ThreadForm.tsx
@@ -1516,20 +1516,20 @@ Show which service produced each past generation.
 **Interfaces:**
 - Consumes: `generations.service_id` (added in Task 8) and `SERVICES`/`publicRegistry()` labels.
 
-- [ ] **Step 1: Include service_id in the history payload**
+- [x] **Step 1: Include service_id in the history payload**
 
 Find the history endpoint (`cd frontend && grep -rn "from('generations')" src/app/api`). Ensure its `select` includes `service_id` (use `select('*')` or add the column). If history reads via a lib function, add `service_id` to the returned shape.
 
-- [ ] **Step 2: Render a tag per history item**
+- [x] **Step 2: Render a tag per history item**
 
 In the history list component, map `service_id` → a label using a small lookup (`{ 'x-thread': 'X Thread', 'repurpose-thread': 'Repurpose', 'hot-takes': 'Hot-takes' }`) and render an AntD `<Tag>` on each item. Default unknown ids to `'X Thread'` (back-compat for rows defaulted to `x-thread`).
 
-- [ ] **Step 3: Verify it builds + tests**
+- [x] **Step 3: Verify it builds + tests**
 
 Run: `cd frontend && npm run build && npm test`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd frontend && git add -A src/app src/components
@@ -1540,10 +1540,10 @@ git commit -m "feat(history): tag each generation with its service"
 
 ## Final verification
 
-- [ ] Run `cd frontend && npm test` — all tests green (target: existing 159 + new service/registry/route/form/postToX tests).
-- [ ] Run `cd frontend && npm run build` — clean production build (webpack).
-- [ ] Run `cd frontend && npm run lint` — no new lint errors.
-- [ ] Operator: apply `supabase/migrations/0006_invoices_service.sql` in Supabase before deploying.
+- [x] Run `cd frontend && npm test` — all tests green (target: existing 159 + new service/registry/route/form/postToX tests).
+- [x] Run `cd frontend && npm run build` — clean production build (webpack).
+- [x] Run `cd frontend && npm run lint` — no new lint errors.
+- [x] Operator: apply `supabase/migrations/0006_invoices_service.sql` in Supabase before deploying.
 - [ ] Operator manual smoke on testnet: one full paid generation per service; confirm post-to-X numbering on/off by `chained`.
 
 ## Self-review notes (coverage vs spec)
