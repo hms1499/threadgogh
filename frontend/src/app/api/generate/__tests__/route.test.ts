@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the route's I/O boundaries (DB, on-chain, LLM).
 vi.mock('@/lib/invoices', () => ({
@@ -61,6 +61,11 @@ beforeEach(() => {
   // Default: caller is under the rate limit.
   m(clientIp).mockReturnValue('1.2.3.4');
   m(checkRateLimit).mockResolvedValue({ allowed: true, retryAfterSec: 0 });
+});
+
+// Some tests spy on the real registry; restore so the spy never leaks into others.
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('POST /api/generate — quote (branch 1)', () => {
@@ -304,12 +309,15 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
     m(invoices.saveGenerationAndConsume).mockImplementation(async (g) => g);
     await POST(req({ invoiceId: INVOICE_ID, txId: '0xtx' }));
     expect(generateThread).toHaveBeenCalledWith(
-      'bitcoin layer 2', 'educational', 5, { firstTweet: 'pinned hook', language: null },
+      'bitcoin layer 2', 'educational', 5, { firstTweet: 'pinned hook', language: 'auto' },
     );
   });
 
   it('passes the invoice language through to generateThread', async () => {
-    m(invoices.getInvoice).mockResolvedValue(baseInvoice({ language: 'vi', preview_hook: 'pinned hook' }));
+    m(invoices.getInvoice).mockResolvedValue(baseInvoice({
+      params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'vi' },
+      preview_hook: 'pinned hook',
+    }));
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue(stxReceipt);
     m(invoices.claimInvoice).mockResolvedValue(true);
@@ -319,6 +327,29 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
     expect(generateThread).toHaveBeenCalledWith(
       'bitcoin layer 2', 'educational', 5, { firstTweet: 'pinned hook', language: 'vi' },
     );
+  });
+
+  it('Branch 2 generates from invoice.params/service, ignoring client body', async () => {
+    const seen: { params: unknown; ctx: unknown }[] = [];
+    vi.spyOn(registry, 'getService').mockReturnValue({
+      id: 'x-thread', label: '', blurb: '', chained: true, priceStx: 100000, priceSbtc: 100, fields: [],
+      validate: () => ({ ok: true, params: {} }),
+      generatePreview: async () => null,
+      generate: async (params: unknown, ctx: unknown) => { seen.push({ params, ctx }); return ['t1', 't2']; },
+      regenerateOne: async () => 't',
+    } as never);
+
+    m(invoices.getInvoice).mockResolvedValue(baseInvoice({ params: { topic: 'real' }, preview_hook: 'hook' }));
+    m(invoices.isExpired).mockReturnValue(false);
+    m(fetchReceipt).mockResolvedValue(stxReceipt);
+    m(invoices.claimInvoice).mockResolvedValue(true);
+    m(invoices.getGeneration).mockResolvedValue(null);
+    m(invoices.saveGenerationAndConsume).mockImplementation(async (g) => g);
+
+    const res = await POST(req({ invoiceId: INVOICE_ID, txId: '0xabc', params: { topic: 'HACKED' } }));
+    expect(res.status).toBe(200);
+    expect(seen[0].params).toEqual({ topic: 'real' });   // from invoice, not 'HACKED'
+    expect(seen[0].ctx).toEqual({ previewHook: 'hook' });
   });
 
   it('LLM fails after claim -> releases invoice for free retry, returns 500', async () => {

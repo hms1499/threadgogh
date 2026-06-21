@@ -4,14 +4,13 @@ import {
   saveGenerationAndConsume, isExpired, isGeneratingStale,
 } from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
-import { generateThread } from '@/lib/generate-thread';
 import { getService } from '@/lib/services/registry';
 import { assertServerEnv } from '@/lib/env';
 import { clientIp, checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/log';
 import {
   CONTRACT, SBTC_CONTRACT,
-  RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC, type Tone,
+  RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC,
 } from '@/lib/config';
 
 export async function POST(req: NextRequest) {
@@ -132,10 +131,8 @@ export async function POST(req: NextRequest) {
 
   let thread: string[];
   try {
-    thread = await generateThread(invoice.topic, invoice.tone as Tone, invoice.length, {
-      firstTweet: invoice.preview_hook ?? null,
-      language: invoice.language ?? null,
-    });
+    const def = getService(invoice.service_id);
+    thread = await def.generate(invoice.params ?? {}, { previewHook: invoice.preview_hook ?? null });
   } catch (e) {
     // LLM failed → release the lock so the user can retry for free (receipt stays on-chain).
     await releaseInvoice(invoice.invoice_id);
@@ -148,6 +145,7 @@ export async function POST(req: NextRequest) {
 
   const gen = await saveGenerationAndConsume({
     invoice_id: invoice.invoice_id,
+    service_id: invoice.service_id,
     payer_address: receipt.payer,
     token: receipt.token,
     amount: Number(receipt.amount),
