@@ -4,13 +4,14 @@ import {
   saveGenerationAndConsume, isExpired, isGeneratingStale,
 } from '@/lib/invoices';
 import { fetchReceipt } from '@/lib/receipt';
-import { generateThread, generateHook } from '@/lib/generate-thread';
+import { generateThread } from '@/lib/generate-thread';
+import { getService } from '@/lib/services/registry';
 import { assertServerEnv } from '@/lib/env';
 import { clientIp, checkRateLimit } from '@/lib/rate-limit';
 import { log } from '@/lib/log';
 import {
-  CONTRACT, SBTC_CONTRACT, TONES, LENGTHS, LANGUAGE_CODES,
-  RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC, type Tone, type LanguageCode,
+  CONTRACT, SBTC_CONTRACT,
+  RATE_LIMIT_QUOTE_MAX, RATE_LIMIT_QUOTE_WINDOW_SEC, type Tone,
 } from '@/lib/config';
 
 export async function POST(req: NextRequest) {
@@ -31,18 +32,15 @@ export async function POST(req: NextRequest) {
   try {
   // ── Branch 1: no proof yet → return a quote (HTTP 402) ──
   if (!body.invoiceId) {
-    const topic = typeof body.topic === 'string' ? body.topic.trim() : '';
-    const tone = body.tone as Tone;
-    const length = Number(body.length);
-    // Unknown/missing language falls back to 'auto' (match the topic) rather than
-    // rejecting — language is a soft preference, not a correctness gate.
-    const language: LanguageCode = LANGUAGE_CODES.includes(body.language) ? body.language : 'auto';
-    if (!topic || topic.length > 300) {
-      return NextResponse.json({ error: 'topic is required (max 300 chars)' }, { status: 400 });
+    let def;
+    try {
+      def = getService(typeof body.service === 'string' ? body.service : 'x-thread');
+    } catch {
+      return NextResponse.json({ error: 'unknown service' }, { status: 400 });
     }
-    if (!TONES.includes(tone) || !LENGTHS.includes(length as 5 | 8 | 12)) {
-      return NextResponse.json({ error: 'invalid tone or length' }, { status: 400 });
-    }
+    const v = def.validate(body.params);
+    if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+
     // Cap this unauthenticated branch per IP — only valid requests reach here, so junk
     // never burns quota, and a bot can't run up the LLM bill + spam the invoices table.
     const rl = await checkRateLimit(`quote:${clientIp(req)}`, {
@@ -57,13 +55,17 @@ export async function POST(req: NextRequest) {
     // Generate the free preview hook. If it fails, degrade gracefully: still quote.
     let previewHook: string | null = null;
     try {
-      previewHook = await generateHook(topic, tone, language);
+      previewHook = await def.generatePreview(v.params);
     } catch (e) {
       log.warn('generate.preview_hook_failed', { err: e });
     }
-    const invoice = await createInvoice(topic, tone, length, previewHook, language);
+    const invoice = await createInvoice({
+      serviceId: def.id, params: v.params as Record<string, unknown>,
+      priceStx: def.priceStx, priceSbtc: def.priceSbtc, previewHook,
+    });
     return NextResponse.json({
       invoiceId: invoice.invoice_id,
+      service: def.id,
       priceStx: invoice.price_stx,
       priceSbtc: invoice.price_sbtc,
       contract: CONTRACT,

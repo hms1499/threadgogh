@@ -15,9 +15,16 @@ vi.mock('@/lib/receipt', () => ({ fetchReceipt: vi.fn() }));
 vi.mock('@/lib/generate-thread', () => ({ generateThread: vi.fn(), generateHook: vi.fn() }));
 vi.mock('@/lib/env', () => ({ assertServerEnv: vi.fn() }));
 vi.mock('@/lib/rate-limit', () => ({ clientIp: vi.fn(), checkRateLimit: vi.fn() }));
+// Use the real registry (so x-thread validate/generatePreview run for real, driving
+// the mocked generate-thread helpers), but keep it spy-able for Branch 2 dispatch tests.
+vi.mock('@/lib/services/registry', async (orig) => {
+  const actual = await orig<typeof import('@/lib/services/registry')>();
+  return { ...actual };
+});
 
 import { POST } from '../route';
 import * as invoices from '@/lib/invoices';
+import * as registry from '@/lib/services/registry';
 import { fetchReceipt } from '@/lib/receipt';
 import { generateThread, generateHook } from '@/lib/generate-thread';
 import { clientIp, checkRateLimit } from '@/lib/rate-limit';
@@ -34,6 +41,8 @@ const INVOICE_ID = 'a'.repeat(64);
 function baseInvoice(overrides: Partial<invoices.Invoice> = {}): invoices.Invoice {
   return {
     invoice_id: INVOICE_ID,
+    service_id: 'x-thread',
+    params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'auto' },
     topic: 'bitcoin layer 2',
     tone: 'educational',
     length: 5,
@@ -57,15 +66,35 @@ beforeEach(() => {
 describe('POST /api/generate — quote (branch 1)', () => {
   it('returns 402 + a new invoice when no invoiceId', async () => {
     m(invoices.createInvoice).mockResolvedValue(baseInvoice());
-    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    const res = await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5 } }));
     expect(res.status).toBe(402);
     const json = await res.json();
     expect(json.invoiceId).toBe(INVOICE_ID);
     expect(json.priceStx).toBe(100000);
   });
 
+  it('unknown service -> 400, no rate-limit slot spent', async () => {
+    const res = await POST(req({ service: 'nope', params: {} }));
+    expect(res.status).toBe(400);
+    expect(invoices.createInvoice).not.toHaveBeenCalled();
+    expect(checkRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('missing service defaults to x-thread and quotes 402 with the service id', async () => {
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice());
+    const res = await POST(req({ params: { topic: 'AI', tone: 'funny', length: 5, language: 'en' } }));
+    expect(res.status).toBe(402);
+    expect((await res.json()).service).toBe('x-thread');
+  });
+
+  it('invalid params -> 400, without spending a rate-limit slot', async () => {
+    const res = await POST(req({ service: 'x-thread', params: { topic: '', tone: 'funny', length: 5 } }));
+    expect(res.status).toBe(400);
+    expect(invoices.createInvoice).not.toHaveBeenCalled();
+  });
+
   it('returns 400 for invalid tone/length, without spending a rate-limit slot', async () => {
-    const res = await POST(req({ topic: 'x', tone: 'nope', length: 99 }));
+    const res = await POST(req({ service: 'x-thread', params: { topic: 'x', tone: 'nope', length: 99 } }));
     expect(res.status).toBe(400);
     expect(invoices.createInvoice).not.toHaveBeenCalled();
     // Junk is rejected before the limiter, so it never burns quota.
@@ -74,7 +103,7 @@ describe('POST /api/generate — quote (branch 1)', () => {
 
   it('rate-limited quote -> 429 with Retry-After, no LLM call, no invoice created', async () => {
     m(checkRateLimit).mockResolvedValue({ allowed: false, retryAfterSec: 42 });
-    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    const res = await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5 } }));
     expect(res.status).toBe(429);
     expect(res.headers.get('Retry-After')).toBe('42');
     expect((await res.json()).retryAfterSec).toBe(42);
@@ -84,44 +113,58 @@ describe('POST /api/generate — quote (branch 1)', () => {
 
   it('checks the rate limit before quoting, keyed by client IP', async () => {
     m(invoices.createInvoice).mockResolvedValue(baseInvoice());
-    await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5 } }));
     expect(checkRateLimit).toHaveBeenCalledWith('quote:1.2.3.4', { max: 10, windowSec: 60 });
   });
 
   it('returns previewHook in the 402 when the hook generates', async () => {
     m(generateHook).mockResolvedValue('a strong hook');
     m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: 'a strong hook' }));
-    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    const res = await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5 } }));
     expect(res.status).toBe(402);
     expect((await res.json()).previewHook).toBe('a strong hook');
-    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, 'a strong hook', 'auto');
+    expect(invoices.createInvoice).toHaveBeenCalledWith(expect.objectContaining({
+      serviceId: 'x-thread',
+      params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'auto' },
+      previewHook: 'a strong hook',
+    }));
   });
 
   it('still returns a 402 quote when the hook generation fails', async () => {
     m(generateHook).mockRejectedValue(new Error('llm down'));
     m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: null }));
-    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5 }));
+    const res = await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5 } }));
     expect(res.status).toBe(402);
     const json = await res.json();
     expect(json.invoiceId).toBe(INVOICE_ID);
     expect(json.previewHook ?? null).toBeNull();
-    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, null, 'auto');
+    expect(invoices.createInvoice).toHaveBeenCalledWith(expect.objectContaining({
+      serviceId: 'x-thread',
+      params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'auto' },
+      previewHook: null,
+    }));
   });
 
   it('passes a valid language through to the hook and the invoice', async () => {
     m(generateHook).mockResolvedValue('un hook fuerte');
-    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: 'un hook fuerte', language: 'vi' }));
-    await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'vi' }));
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: 'un hook fuerte' }));
+    await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'vi' } }));
     expect(generateHook).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 'vi');
-    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, 'un hook fuerte', 'vi');
+    expect(invoices.createInvoice).toHaveBeenCalledWith(expect.objectContaining({
+      serviceId: 'x-thread',
+      params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'vi' },
+      previewHook: 'un hook fuerte',
+    }));
   });
 
   it('falls back to auto for an unknown language instead of rejecting', async () => {
     m(generateHook).mockRejectedValue(new Error('hook off')); // isolate from prior mock state
     m(invoices.createInvoice).mockResolvedValue(baseInvoice());
-    const res = await POST(req({ topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'klingon' }));
+    const res = await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'klingon' } }));
     expect(res.status).toBe(402);
-    expect(invoices.createInvoice).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, null, 'auto');
+    expect(invoices.createInvoice).toHaveBeenCalledWith(expect.objectContaining({
+      params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'auto' },
+    }));
   });
 });
 
