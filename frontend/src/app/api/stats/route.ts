@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { fetchOnChainStats } from '@/lib/onchain-stats';
 
+// Stats reflect the on-chain truth (every paid pay-stx/pay-sbtc on the thread-pay
+// contract), not the Supabase `generations` table — direct/agent payments that never
+// redeem through the web app still count as real, paid revenue.
 export async function GET() {
-  const { data, error } = await supabase.from('generations').select('token, amount');
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const stats = { threads: data.length, stxRevenue: 0, sbtcRevenue: 0 };
-  for (const g of data) {
-    if (g.token === 'STX') stats.stxRevenue += g.amount;
-    else stats.sbtcRevenue += g.amount;
+  try {
+    const stats = await fetchOnChainStats();
+    return NextResponse.json(stats);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'failed to read on-chain stats' },
+      { status: 500 },
+    );
   }
-  return NextResponse.json(stats);
 }
