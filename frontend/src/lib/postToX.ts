@@ -7,11 +7,12 @@ const INTENT_BASE = 'https://x.com/intent/tweet';
 const TWEET_LIMIT = 280;
 
 // Append an "i/n" thread marker to each tweet. A single-tweet thread is never
-// numbered. If the marker would push a tweet past 280 chars it's left off that
-// tweet (we don't truncate the user's words) — returns a new array, input intact.
-export function withThreadNumbers(thread: string[]): string[] {
+// numbered, and an unchained service (standalone posts, e.g. hot-takes) is never
+// numbered either. If the marker would push a tweet past 280 chars it's left off
+// that tweet (we don't truncate the user's words) — returns a new array, input intact.
+export function withThreadNumbers(thread: string[], chained: boolean = true): string[] {
   const n = thread.length;
-  if (n <= 1) return thread.slice();
+  if (!chained || n <= 1) return thread.slice();
   return thread.map((text, i) => {
     const marker = `\n\n${i + 1}/${n}`;
     return text.length + marker.length <= TWEET_LIMIT ? text + marker : text;

@@ -55,3 +55,12 @@ describe('intentUrl', () => {
     expect(intentUrl('   ')).toBe('https://x.com/intent/tweet');
   });
 });
+
+describe('withThreadNumbers chained flag', () => {
+  it('numbers when chained (default)', () => {
+    expect(withThreadNumbers(['a', 'b'])[0]).toContain('1/2');
+  });
+  it('does not number when chained=false', () => {
+    expect(withThreadNumbers(['a', 'b'], false)).toEqual(['a', 'b']);
+  });
+});
