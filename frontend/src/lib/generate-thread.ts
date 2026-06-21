@@ -79,7 +79,15 @@ export function extractText(provider: Provider, json: unknown): string {
   return text;
 }
 
-async function callLlm(config: LlmConfig, system: string, user: string): Promise<string> {
+export function assertApiKey(config: LlmConfig): void {
+  if (config.provider !== 'ollama' && !config.apiKey) {
+    throw new Error(
+      `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
+    );
+  }
+}
+
+export async function callLlm(config: LlmConfig, system: string, user: string): Promise<string> {
   if (config.provider === 'gemini') {
     const url = `${config.baseUrl}/models/${config.model}:generateContent?key=${config.apiKey}`;
     const res = await fetch(url, {
@@ -215,11 +223,7 @@ export function parseHook(raw: string): string {
 // One free, cheap LLM call: just the opening hook tweet. Used at quote time.
 export async function generateHook(topic: string, tone: Tone, language?: string | null): Promise<string> {
   const config = resolveLlmConfig(process.env);
-  if (config.provider !== 'ollama' && !config.apiKey) {
-    throw new Error(
-      `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
-    );
-  }
+  assertApiKey(config);
   const system = [
     'You are an expert X (Twitter) thread writer.',
     'Return ONLY a JSON object of the form {"tweet": "..."} — a single opening hook tweet.',
@@ -239,11 +243,7 @@ export async function regenerateTweet(
   opts?: { language?: string | null },
 ): Promise<string> {
   const config = resolveLlmConfig(process.env);
-  if (config.provider !== 'ollama' && !config.apiKey) {
-    throw new Error(
-      `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
-    );
-  }
+  assertApiKey(config);
   const system = [
     'You are an expert X (Twitter) thread writer.',
     'You are given an existing thread and the 1-based position of ONE tweet to rewrite.',
@@ -272,11 +272,7 @@ export async function generateThread(
   opts?: { firstTweet?: string | null; language?: string | null },
 ): Promise<string[]> {
   const config = resolveLlmConfig(process.env);
-  if (config.provider !== 'ollama' && !config.apiKey) {
-    throw new Error(
-      `Missing API key for "${config.provider}". Set ${DEFAULTS[config.provider].keyEnv} in .env.local`,
-    );
-  }
+  assertApiKey(config);
   const firstTweet = opts?.firstTweet && opts.firstTweet.trim() !== '' ? opts.firstTweet : null;
   const wanted = firstTweet ? length - 1 : length;
   const system = [

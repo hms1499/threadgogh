@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread, languageInstruction } from '../generate-thread';
+import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread, languageInstruction, assertApiKey } from '../generate-thread';
 
 describe('languageInstruction', () => {
   it('forces a known language by its English name', () => {
@@ -139,6 +139,24 @@ describe('assembleThread', () => {
 
   it('returns just the pinned tweet when the model adds nothing', () => {
     expect(assembleThread('HOOK', [], 5)).toEqual(['HOOK']);
+  });
+});
+
+describe('assertApiKey', () => {
+  it('throws when a non-ollama provider has no key', () => {
+    expect(() =>
+      assertApiKey({ provider: 'groq', baseUrl: 'x', model: 'm', apiKey: '' }),
+    ).toThrow(/GROQ_API_KEY/);
+  });
+  it('passes for ollama with no key', () => {
+    expect(() =>
+      assertApiKey({ provider: 'ollama', baseUrl: 'x', model: 'm', apiKey: '' }),
+    ).not.toThrow();
+  });
+  it('passes when a key is present', () => {
+    expect(() =>
+      assertApiKey({ provider: 'groq', baseUrl: 'x', model: 'm', apiKey: 'k' }),
+    ).not.toThrow();
   });
 });
 
