@@ -6,8 +6,7 @@ import { STACKS_NETWORK } from '@/lib/config';
 import { VanGoghLoader } from './VanGoghLoader';
 
 const LOADER_LABEL: Partial<Record<Phase, string>> = {
-  quoting:    'Requesting a quote…',
-  generating: 'Painting your thread…',
+  quoting: 'Requesting a quote…',
 };
 
 export type Phase =
