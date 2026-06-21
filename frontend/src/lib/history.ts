@@ -11,6 +11,7 @@ export type HistoryCursor = { createdAt: string; id: number };
 
 export type HistoryItem = {
   invoice_id: string;
+  service_id: string;
   token: string;
   amount: number;
   tx_id: string;
@@ -25,6 +26,7 @@ export type HistoryItem = {
 type RawRow = {
   id: number;
   invoice_id: string;
+  service_id: string;
   token: string;
   amount: number;
   tx_id: string;
@@ -37,6 +39,8 @@ export function normalizeRow(raw: RawRow): HistoryItem {
   const rel = Array.isArray(raw.invoices) ? raw.invoices[0] : raw.invoices;
   return {
     invoice_id: raw.invoice_id,
+    // Rows predating the marketplace default to x-thread (matches migration 0006).
+    service_id: raw.service_id ?? 'x-thread',
     token: raw.token,
     amount: raw.amount,
     tx_id: raw.tx_id,
@@ -64,7 +68,7 @@ export function buildKeysetFilter(cursor: HistoryCursor): string {
   );
 }
 
-const COLUMNS = 'id, invoice_id, token, amount, tx_id, thread_content, created_at, invoices(topic)';
+const COLUMNS = 'id, invoice_id, service_id, token, amount, tx_id, thread_content, created_at, invoices(topic)';
 
 export async function fetchHistoryPage(
   address: string,

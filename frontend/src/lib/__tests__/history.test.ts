@@ -9,6 +9,7 @@ import { normalizeRow, deriveNextCursor, buildKeysetFilter, PAGE_SIZE } from '@/
 const rawRow = (over: Record<string, unknown> = {}) => ({
   id: 7,
   invoice_id: 'a'.repeat(64),
+  service_id: 'hot-takes',
   token: 'STX',
   amount: 100000,
   tx_id: '0xtx',
@@ -37,6 +38,11 @@ describe('normalizeRow', () => {
   it('yields null topic when the relation is missing', () => {
     expect(normalizeRow(rawRow({ invoices: null })).topic).toBeNull();
     expect(normalizeRow(rawRow({ invoices: [] })).topic).toBeNull();
+  });
+
+  it('carries the service_id through, defaulting legacy rows to x-thread', () => {
+    expect(normalizeRow(rawRow()).service_id).toBe('hot-takes');
+    expect(normalizeRow(rawRow({ service_id: undefined })).service_id).toBe('x-thread');
   });
 });
 

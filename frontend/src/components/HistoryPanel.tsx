@@ -11,12 +11,21 @@ type Cursor = { createdAt: string; id: number };
 
 type Item = {
   invoice_id: string;
+  service_id: string;
   token: string;
   amount: number;
   thread_content: string[];
   created_at: string;
   topic: string | null;
 };
+
+// Legacy rows (and anything unrecognized) read as the original X-thread service.
+const SERVICE_LABELS: Record<string, string> = {
+  'x-thread': 'X Thread',
+  'repurpose-thread': 'Repurpose',
+  'hot-takes': 'Hot-takes',
+};
+const serviceLabel = (id: string) => SERVICE_LABELS[id] ?? 'X Thread';
 
 export function HistoryPanel({ address, onSelect }: {
   address: string | null;
@@ -99,6 +108,9 @@ export function HistoryPanel({ address, onSelect }: {
             >
               <Text style={{ display: 'block' }}>{it.topic ?? '(unknown topic)'}</Text>
               <Flex gap={8} align="center" style={{ marginTop: 4 }}>
+                <Tag variant="filled" color="blue">
+                  {serviceLabel(it.service_id)}
+                </Tag>
                 <Tag className="tp-mono" variant="filled" color={it.token === 'SBTC' ? 'gold' : 'default'}>
                   {it.token}
                 </Tag>
