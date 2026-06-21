@@ -1,15 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Input, Segmented, Select, Button, Flex } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { Segmented, Button, Flex, Typography } from 'antd';
 import { ThunderboltFilled } from '@ant-design/icons';
-import { TONES, LENGTHS, LANGUAGES, type Tone, type LanguageCode } from '@/lib/config';
+import type { PublicServiceDef } from '@/lib/services/types';
+import { ServicePicker } from './ServicePicker';
+import { ServiceForm } from './ServiceForm';
+import { defaultParams, clientValidate } from '@/lib/services/form';
 
-const TONE_LABELS: Record<Tone, string> = {
-  educational: '📚 Educational',
-  funny:       '😂 Funny',
-  threadboi:   '🧵 Thread-boi',
-};
+const { Text } = Typography;
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -25,69 +24,76 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export type FormValues = { topic: string; tone: Tone; length: number; language: LanguageCode; token: 'STX' | 'SBTC' };
+export type FormValues = { service: string; params: Record<string, unknown>; token: 'STX' | 'SBTC' };
 
-export function ThreadForm({ onSubmit, disabled }: {
+// The generate card is driven by the service registry: pick a service, fill its
+// dynamic fields, choose a token, submit. Falls back gracefully if the registry
+// hasn't loaded — the marketplace is an enhancement, never a hard dependency.
+export function ThreadForm({ services, servicesError, onSubmit, disabled }: {
+  services: PublicServiceDef[];
+  servicesError?: boolean;
   onSubmit: (v: FormValues) => void;
   disabled: boolean;
 }) {
-  const [topic, setTopic]       = useState('');
-  const [tone, setTone]         = useState<Tone>('educational');
-  const [length, setLength]     = useState<number>(8);
-  const [language, setLanguage] = useState<LanguageCode>('auto');
-  const [token, setToken]       = useState<'STX' | 'SBTC'>('STX');
+  const [selectedId, setSelectedId] = useState('x-thread');
+  const [params, setParams] = useState<Record<string, unknown>>({});
+  const [token, setToken] = useState<'STX' | 'SBTC'>('STX');
+
+  const selected = useMemo(
+    () => services.find((s) => s.id === selectedId) ?? services[0],
+    [services, selectedId],
+  );
+
+  // Seed each field to its default whenever the selected service changes (and once
+  // the registry first loads). Keyed on the id so switching services resets cleanly.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (selected) setParams(defaultParams(selected.fields));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id]);
+
+  const shell = { borderRadius: 14, padding: '22px 20px' } as const;
+
+  if (servicesError) {
+    return (
+      <div className="vg-card" style={shell}>
+        <Text type="secondary">Services unavailable — refresh to retry.</Text>
+      </div>
+    );
+  }
+  if (!selected) {
+    return (
+      <div className="vg-card" style={shell}>
+        <Text type="secondary">Loading services…</Text>
+      </div>
+    );
+  }
+
+  const invalid = clientValidate(selected.fields, params) !== null;
 
   function submit() {
-    if (topic.trim()) onSubmit({ topic: topic.trim(), tone, length, language, token });
+    if (clientValidate(selected.fields, params)) return;
+    onSubmit({ service: selected.id, params, token });
   }
 
   return (
-    <div
-      className="vg-card"
-      style={{ borderRadius: 14, padding: '22px 20px' }}
-    >
+    <div className="vg-card" style={shell}>
       <Flex vertical gap={20}>
-        <Flex vertical gap={8}>
-          <FieldLabel>Topic</FieldLabel>
-          <Input.TextArea
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Enter a topic or idea for your thread..."
-            maxLength={300}
-            showCount
-            autoSize={{ minRows: 3, maxRows: 6 }}
+        {services.length > 1 && (
+          <ServicePicker
+            services={services}
+            selectedId={selected.id}
+            onSelect={setSelectedId}
+            disabled={disabled}
           />
-        </Flex>
+        )}
 
-        <Flex vertical gap={8}>
-          <FieldLabel>Tone</FieldLabel>
-          <Segmented
-            block
-            value={tone}
-            onChange={(v) => setTone(v as Tone)}
-            options={TONES.map((t) => ({ label: TONE_LABELS[t], value: t }))}
-          />
-        </Flex>
-
-        <Flex vertical gap={8}>
-          <FieldLabel>Length</FieldLabel>
-          <Segmented
-            block
-            value={length}
-            onChange={(v) => setLength(Number(v))}
-            options={LENGTHS.map((l) => ({ label: `${l} tweets`, value: l }))}
-          />
-        </Flex>
-
-        <Flex vertical gap={8}>
-          <FieldLabel>Language</FieldLabel>
-          <Select
-            value={language}
-            onChange={(v) => setLanguage(v as LanguageCode)}
-            options={LANGUAGES.map((l) => ({ label: l.label, value: l.value }))}
-            style={{ width: '100%' }}
-          />
-        </Flex>
+        <ServiceForm
+          fields={selected.fields}
+          params={params}
+          onChange={(name, value) => setParams((p) => ({ ...p, [name]: value }))}
+          disabled={disabled}
+        />
 
         <Flex vertical gap={8}>
           <FieldLabel>Pay with</FieldLabel>
@@ -106,14 +112,14 @@ export function ThreadForm({ onSubmit, disabled }: {
           type="primary"
           size="large"
           block
-          disabled={disabled || !topic.trim()}
+          disabled={disabled || invalid}
           loading={disabled}
           onClick={submit}
           icon={<ThunderboltFilled />}
           className="vg-glow-btn"
           style={{ marginTop: 4, height: 48, fontSize: 15, fontWeight: 600 }}
         >
-          Generate Thread
+          Generate {selected.label}
         </Button>
       </Flex>
     </div>

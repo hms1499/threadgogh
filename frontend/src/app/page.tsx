@@ -5,6 +5,7 @@ import { Button, Typography, Flex, Statistic, App, Drawer } from 'antd';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { WalletOutlined, CopyOutlined, CheckOutlined, HistoryOutlined, TwitterOutlined } from '@ant-design/icons';
 import { ThreadForm, type FormValues } from '@/components/ThreadForm';
+import type { PublicServiceDef } from '@/lib/services/types';
 import { TweetCard } from '@/components/TweetCard';
 import { PaymentStatus, type Phase } from '@/components/PaymentStatus';
 import { PostThreadModal } from '@/components/PostThreadModal';
@@ -30,6 +31,11 @@ export default function Home() {
   const [thread, setThread] = useState<string[]>([]);
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string>();
   const [stats, setStats] = useState<{ threads: number; stxRevenue: number; sbtcRevenue: number }>();
+  const [services, setServices] = useState<PublicServiceDef[]>([]);
+  const [servicesError, setServicesError] = useState(false);
+  // Whether the currently displayed thread came from a chained service (true) or a
+  // pack of standalone posts (false) — drives i/n numbering in the post-to-X flow.
+  const [threadChained, setThreadChained] = useState(true);
   const [previewHook, setPreviewHook] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
@@ -64,6 +70,12 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAddress(getAddress());
     refreshStats();
+    // Load the service marketplace. On failure, surface a retry notice rather than
+    // crashing — the rest of the page still works.
+    fetch('/api/services')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
+      .then((d) => { if (Array.isArray(d?.services)) setServices(d.services); else throw new Error('bad payload'); })
+      .catch(() => setServicesError(true));
   }, []);
 
   // When a fresh thread finishes, bring it into view so the result isn't
@@ -176,6 +188,9 @@ export default function Home() {
 
   async function handleGenerate(values: FormValues) {
     setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null); setDisplayedInvoiceId(undefined); setRegenRemaining(null);
+    // Pin the chained-ness of the service we're generating with, so post-to-X
+    // numbering matches the result once it lands.
+    setThreadChained(services.find((s) => s.id === values.service)?.chained ?? true);
     try {
       if (!getAddress()) {
         const addr = await connectWallet();
@@ -185,7 +200,7 @@ export default function Home() {
       const quoteRes = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: values.topic, tone: values.tone, length: values.length, language: values.language }),
+        body: JSON.stringify({ service: values.service, params: values.params }),
       });
       if (quoteRes.status !== 402) throw new Error('Could not get a quote');
       const quote: Quote = await quoteRes.json();
@@ -287,7 +302,7 @@ export default function Home() {
 
       {/* ── Form ── */}
       <div className="tp-rise" style={{ animationDelay: '0.08s' }}>
-        <ThreadForm onSubmit={handleGenerate} disabled={busy} />
+        <ThreadForm services={services} servicesError={servicesError} onSubmit={handleGenerate} disabled={busy} />
       </div>
 
       {/* ── Free hook preview ── */}
@@ -387,7 +402,7 @@ export default function Home() {
       {thread.length === 0 && phase === 'idle' && <EmptyGallery />}
 
       {/* ── Post the whole thread to X, one tweet at a time ── */}
-      <PostThreadModal thread={thread} open={postOpen} onClose={() => setPostOpen(false)} />
+      <PostThreadModal thread={thread} chained={threadChained} open={postOpen} onClose={() => setPostOpen(false)} />
 
       {/* ── History — opened from the hero, not inline ── */}
       <Drawer
@@ -407,7 +422,7 @@ export default function Home() {
       >
         <HistoryPanel
           address={address}
-          onSelect={(t) => { setThread(t); setPhase('done'); setDisplayedInvoiceId(undefined); setRegenRemaining(null); setHistoryOpen(false); }}
+          onSelect={(t) => { setThread(t); setPhase('done'); setDisplayedInvoiceId(undefined); setRegenRemaining(null); setThreadChained(true); setHistoryOpen(false); }}
         />
       </Drawer>
 
