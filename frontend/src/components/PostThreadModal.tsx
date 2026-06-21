@@ -10,10 +10,10 @@ const { Paragraph, Text } = Typography;
 // Guided "post the whole thread to X" flow. The X compose-intent can't pre-link a
 // reply, so we walk the user one tweet at a time (numbered i/n) and tell them to
 // reply each new tweet to the previous one to build the chain.
-export function PostThreadModal({ thread, open, onClose }: {
-  thread: string[]; open: boolean; onClose: () => void;
+export function PostThreadModal({ thread, chained = true, open, onClose }: {
+  thread: string[]; chained?: boolean; open: boolean; onClose: () => void;
 }) {
-  const numbered = withThreadNumbers(thread);
+  const numbered = withThreadNumbers(thread, chained);
   const n = numbered.length;
   const [step, setStep] = useState(0);
   const [openedCurrent, setOpenedCurrent] = useState(false);
