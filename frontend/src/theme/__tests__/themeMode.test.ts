@@ -2,19 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { resolveInitialMode, nextMode, isThemeMode, THEME_STORAGE_KEY } from '../themeMode';
 
 describe('themeMode', () => {
-  it('stored choice wins over OS preference', () => {
-    expect(resolveInitialMode('light', true)).toBe('light');
-    expect(resolveInitialMode('dark', false)).toBe('dark');
+  it('stored choice always wins', () => {
+    expect(resolveInitialMode('light')).toBe('light');
+    expect(resolveInitialMode('dark')).toBe('dark');
   });
 
-  it('falls back to OS when nothing stored', () => {
-    expect(resolveInitialMode(null, true)).toBe('dark');
-    expect(resolveInitialMode(null, false)).toBe('light');
+  it('defaults to dark when nothing stored', () => {
+    expect(resolveInitialMode(null)).toBe('dark');
   });
 
-  it('ignores invalid stored values and uses OS', () => {
-    expect(resolveInitialMode('purple', true)).toBe('dark');
-    expect(resolveInitialMode('', false)).toBe('light');
+  it('ignores invalid stored values and defaults to dark', () => {
+    expect(resolveInitialMode('purple')).toBe('dark');
+    expect(resolveInitialMode('')).toBe('dark');
   });
 
   it('toggles between the two modes', () => {

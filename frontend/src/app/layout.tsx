@@ -46,7 +46,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var s=localStorage.getItem('tg-theme');var m=(s==='light'||s==='dark')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.dataset.theme=m;e.style.colorScheme=m;}catch(_){}})();",
+              "(function(){try{var s=localStorage.getItem('tg-theme');var m=(s==='light'||s==='dark')?s:'dark';var e=document.documentElement;e.dataset.theme=m;e.style.colorScheme=m;}catch(_){}})();",
           }}
         />
         <ThemeProvider>

@@ -7,10 +7,10 @@ export function isThemeMode(value: unknown): value is ThemeMode {
   return value === 'light' || value === 'dark';
 }
 
-// Explicit stored choice always wins; otherwise follow the OS preference.
-export function resolveInitialMode(stored: string | null, prefersDark: boolean): ThemeMode {
-  if (isThemeMode(stored)) return stored;
-  return prefersDark ? 'dark' : 'light';
+// Explicit stored choice always wins; otherwise default to dark (the app's
+// baseline — CSS :root is dark). OS preference is intentionally not consulted.
+export function resolveInitialMode(stored: string | null): ThemeMode {
+  return isThemeMode(stored) ? stored : 'dark';
 }
 
 export function nextMode(mode: ThemeMode): ThemeMode {
