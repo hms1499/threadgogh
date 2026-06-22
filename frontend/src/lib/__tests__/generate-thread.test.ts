@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread, languageInstruction, assertApiKey, parseHookAndOutline } from '../generate-thread';
+import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread, languageInstruction, assertApiKey, parseHookAndOutline, buildThreadPrompt } from '../generate-thread';
 
 describe('languageInstruction', () => {
   it('forces a known language by its English name', () => {
@@ -212,5 +212,38 @@ describe('parseHookAndOutline', () => {
 
   it('throws on unparseable output', () => {
     expect(() => parseHookAndOutline('not json at all', 3)).toThrow();
+  });
+});
+
+describe('buildThreadPrompt', () => {
+  it('builds a from-scratch prompt with no outline', () => {
+    const { system, user } = buildThreadPrompt('AI agents', 'educational', 8);
+    expect(system).toContain('Tweet 1 must be a strong hook.');
+    expect(system).not.toContain('Follow the given outline');
+    expect(user).toContain('Topic: AI agents');
+    expect(user).toContain('Number of tweets: 8');
+    expect(user).not.toContain('Outline');
+  });
+
+  it('embeds the outline and the follow-outline instruction', () => {
+    const { system, user } = buildThreadPrompt('AI agents', 'educational', 3, {
+      outline: ['Point A', 'Point B', 'Point C'],
+    });
+    expect(system).toContain('Follow the given outline');
+    expect(user).toContain('1. Point A');
+    expect(user).toContain('3. Point C');
+  });
+
+  it('with a given firstTweet, lists the outline minus its first point', () => {
+    const { system, user } = buildThreadPrompt('AI agents', 'educational', 3, {
+      firstTweet: 'My hook',
+      outline: ['Hook point', 'Point B', 'Point C'],
+    });
+    expect(system).toContain('Tweet 1 is already written');
+    expect(user).toContain('Tweet 1 (already written): My hook');
+    expect(user).toContain('Number of additional tweets to write: 2');
+    expect(user).toContain('1. Point B');
+    expect(user).toContain('2. Point C');
+    expect(user).not.toContain('Hook point');
   });
 });
