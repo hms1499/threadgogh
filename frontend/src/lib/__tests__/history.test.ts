@@ -40,6 +40,25 @@ describe('normalizeRow', () => {
     expect(normalizeRow(rawRow({ invoices: [] })).topic).toBeNull();
   });
 
+  it('prefers params.topic over the legacy column for new invoices', () => {
+    const item = normalizeRow(rawRow({
+      invoices: { topic: null, params: { topic: 'from params', tone: 'witty' } },
+    }));
+    expect(item.topic).toBe('from params');
+  });
+
+  it('falls back to params.sourceText when there is no topic (repurpose-thread)', () => {
+    const item = normalizeRow(rawRow({
+      invoices: { topic: null, params: { sourceText: 'a long article to repurpose' } },
+    }));
+    expect(item.topic).toBe('a long article to repurpose');
+  });
+
+  it('falls back to the legacy topic column when params is absent (old rows)', () => {
+    const item = normalizeRow(rawRow({ invoices: { topic: 'legacy topic' } }));
+    expect(item.topic).toBe('legacy topic');
+  });
+
   it('carries the service_id through, defaulting legacy rows to x-thread', () => {
     expect(normalizeRow(rawRow()).service_id).toBe('hot-takes');
     expect(normalizeRow(rawRow({ service_id: undefined })).service_id).toBe('x-thread');

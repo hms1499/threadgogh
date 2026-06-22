@@ -32,8 +32,23 @@ type RawRow = {
   tx_id: string;
   thread_content: string[];
   created_at: string;
-  invoices: { topic: string } | { topic: string }[] | null;
+  invoices: InvoiceRel | InvoiceRel[] | null;
 };
+
+type InvoiceRel = { topic?: string | null; params?: Record<string, unknown> | null };
+
+// A display label for the history row. New invoices store inputs in `params` (the
+// `topic` column is null for them); rows predating migration 0006 only have the
+// legacy column. Prefer params (topic, else the repurpose-thread source text), then
+// fall back to the legacy column.
+function displayTopic(rel: InvoiceRel | undefined): string | null {
+  const p = rel?.params;
+  if (p) {
+    if (typeof p.topic === 'string' && p.topic) return p.topic;
+    if (typeof p.sourceText === 'string' && p.sourceText) return p.sourceText;
+  }
+  return rel?.topic ?? null;
+}
 
 export function normalizeRow(raw: RawRow): HistoryItem {
   const rel = Array.isArray(raw.invoices) ? raw.invoices[0] : raw.invoices;
@@ -46,7 +61,7 @@ export function normalizeRow(raw: RawRow): HistoryItem {
     tx_id: raw.tx_id,
     thread_content: raw.thread_content,
     created_at: raw.created_at,
-    topic: rel?.topic ?? null,
+    topic: displayTopic(rel ?? undefined),
   };
 }
 
@@ -68,7 +83,7 @@ export function buildKeysetFilter(cursor: HistoryCursor): string {
   );
 }
 
-const COLUMNS = 'id, invoice_id, service_id, token, amount, tx_id, thread_content, created_at, invoices(topic)';
+const COLUMNS = 'id, invoice_id, service_id, token, amount, tx_id, thread_content, created_at, invoices(topic, params)';
 
 export async function fetchHistoryPage(
   address: string,
