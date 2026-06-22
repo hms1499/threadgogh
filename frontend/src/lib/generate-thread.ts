@@ -222,6 +222,39 @@ export function parseHook(raw: string): string {
   return trimmed.length > 280 ? `${trimmed.slice(0, 277)}...` : trimmed;
 }
 
+// Parse a hook + outline object for the pre-payment preview. Accepts
+// {"hook"|"tweet": "...", "outline": ["...", ...]}, tolerant of code fences.
+// The outline is trimmed to at most `length` items; short outlines are kept
+// as-is (no empty padding — the UI renders only the rows that exist).
+export function parseHookAndOutline(
+  raw: string, length: number,
+): { hook: string; outline: string[] } {
+  const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    const slice = extractJsonSlice(cleaned);
+    if (slice === null) throw new Error('LLM output is not valid JSON');
+    parsed = JSON.parse(slice);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('LLM output is not a hook+outline object');
+  }
+  const obj = parsed as Record<string, unknown>;
+  const rawHook = typeof obj.hook === 'string' ? obj.hook
+    : typeof obj.tweet === 'string' ? obj.tweet : '';
+  const hook = rawHook.trim();
+  if (!hook) throw new Error('LLM output is missing a usable hook');
+  const items = (Array.isArray(obj.outline) ? obj.outline : [])
+    .filter((s): s is string => typeof s === 'string')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, length);
+  const cappedHook = hook.length > 280 ? `${hook.slice(0, 277)}...` : hook;
+  return { hook: cappedHook, outline: items };
+}
+
 // One free, cheap LLM call: just the opening hook tweet. Used at quote time.
 export async function generateHook(topic: string, tone: Tone, language?: string | null): Promise<string> {
   const config = resolveLlmConfig(process.env);

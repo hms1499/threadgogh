@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread, languageInstruction, assertApiKey } from '../generate-thread';
+import { parseThreadJson, resolveLlmConfig, extractText, parseHook, assembleThread, languageInstruction, assertApiKey, parseHookAndOutline } from '../generate-thread';
 
 describe('languageInstruction', () => {
   it('forces a known language by its English name', () => {
@@ -174,5 +174,43 @@ describe('extractText', () => {
   it('throws when the shape is unexpected', () => {
     expect(() => extractText('groq', {})).toThrow();
     expect(() => extractText('gemini', {})).toThrow();
+  });
+});
+
+describe('parseHookAndOutline', () => {
+  it('parses a hook + outline object', () => {
+    const raw = '{"hook":"Why X breaks","outline":["The problem","A cause","The fix"]}';
+    expect(parseHookAndOutline(raw, 3)).toEqual({
+      hook: 'Why X breaks',
+      outline: ['The problem', 'A cause', 'The fix'],
+    });
+  });
+
+  it('strips code fences before parsing', () => {
+    const raw = '```json\n{"hook":"H","outline":["a","b"]}\n```';
+    expect(parseHookAndOutline(raw, 2).outline).toEqual(['a', 'b']);
+  });
+
+  it('trims a too-long outline down to length', () => {
+    const raw = '{"hook":"H","outline":["1","2","3","4","5"]}';
+    expect(parseHookAndOutline(raw, 3).outline).toEqual(['1', '2', '3']);
+  });
+
+  it('keeps a short outline as-is (no empty padding)', () => {
+    const raw = '{"hook":"H","outline":["only one"]}';
+    expect(parseHookAndOutline(raw, 5).outline).toEqual(['only one']);
+  });
+
+  it('drops non-string and blank outline items', () => {
+    const raw = '{"hook":"H","outline":["keep", 7, "  ", "also"]}';
+    expect(parseHookAndOutline(raw, 5).outline).toEqual(['keep', 'also']);
+  });
+
+  it('throws when the hook is missing', () => {
+    expect(() => parseHookAndOutline('{"outline":["a"]}', 3)).toThrow();
+  });
+
+  it('throws on unparseable output', () => {
+    expect(() => parseHookAndOutline('not json at all', 3)).toThrow();
   });
 });
