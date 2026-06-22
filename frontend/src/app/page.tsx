@@ -13,6 +13,7 @@ import { AppSplash } from '@/components/AppSplash';
 import { VanGoghCanvas } from '@/components/VanGoghCanvas';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
+import { OutlinePreview } from '@/components/OutlinePreview';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, signInWithWallet, waitForTx } from '@/lib/stacks';
 import { MAX_FREE_REGENS } from '@/lib/config';
@@ -21,7 +22,7 @@ import { applyEdit, deleteTweet } from '@/lib/editThread';
 const { Title, Paragraph, Text } = Typography;
 
 type Quote = {
-  invoiceId: string; priceStx: number; priceSbtc: number; expiresAt: string; previewHook?: string | null;
+  invoiceId: string; priceStx: number; priceSbtc: number; expiresAt: string; previewHook?: string | null; previewOutline?: string[] | null;
 };
 
 export default function Home() {
@@ -40,6 +41,8 @@ export default function Home() {
   // pack of standalone posts (false) — drives i/n numbering in the post-to-X flow.
   const [threadChained, setThreadChained] = useState(true);
   const [previewHook, setPreviewHook] = useState<string | null>(null);
+  const [previewOutline, setPreviewOutline] = useState<string[] | null>(null);
+  const [previewPriceLabel, setPreviewPriceLabel] = useState<string>('');
   const [copiedAll, setCopiedAll] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -191,7 +194,7 @@ export default function Home() {
   }
 
   async function handleGenerate(values: FormValues) {
-    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null); setDisplayedInvoiceId(undefined); setRegenRemaining(null);
+    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null); setPreviewOutline(null); setPreviewPriceLabel(''); setDisplayedInvoiceId(undefined); setRegenRemaining(null);
     // Pin the chained-ness of the service we're generating with, so post-to-X
     // numbering matches the result once it lands.
     setThreadChained(services.find((s) => s.id === values.service)?.chained ?? true);
@@ -212,6 +215,10 @@ export default function Home() {
       }
       const quote: Quote = await quoteRes.json();
       setPreviewHook(quote.previewHook ?? null);
+      setPreviewOutline(quote.previewOutline ?? null);
+      setPreviewPriceLabel(values.token === 'STX'
+        ? `${quote.priceStx / 1_000_000} STX`
+        : `${quote.priceSbtc} sats`);
 
       setPhase('awaiting-signature');
       const amount = values.token === 'STX' ? quote.priceStx : quote.priceSbtc;
@@ -316,17 +323,9 @@ export default function Home() {
         <ThreadForm services={services} servicesError={servicesError} onSubmit={handleGenerate} disabled={busy} />
       </div>
 
-      {/* ── Free hook preview ── */}
+      {/* ── Free preview: hook + locked outline ── */}
       {previewHook && thread.length === 0 && (
-        <div className="tp-rise vg-gallery" style={{ marginTop: 20, padding: 16 }}>
-          <Text style={{ display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--vg-on-art-faint)', marginBottom: 8 }}>
-            Free preview — your hook
-          </Text>
-          <Paragraph style={{ margin: 0, color: 'var(--vg-on-art)', fontSize: 15 }}>{previewHook}</Paragraph>
-          <Text style={{ display: 'block', marginTop: 10, color: 'var(--vg-on-art-soft)', fontSize: 13 }}>
-            Pay to unlock the full thread.
-          </Text>
-        </div>
+        <OutlinePreview hook={previewHook} outline={previewOutline} priceLabel={previewPriceLabel} />
       )}
 
       {/* ── Payment status ── */}
