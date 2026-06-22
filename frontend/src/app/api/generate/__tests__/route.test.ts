@@ -334,7 +334,7 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
     vi.spyOn(registry, 'getService').mockReturnValue({
       id: 'x-thread', label: '', blurb: '', chained: true, priceStx: 100000, priceSbtc: 100, fields: [],
       validate: () => ({ ok: true, params: {} }),
-      generatePreview: async () => null,
+      generatePreview: async () => ({ hook: null, outline: null }),
       generate: async (params: unknown, ctx: unknown) => { seen.push({ params, ctx }); return ['t1', 't2']; },
       regenerateOne: async () => 't',
     } as never);
