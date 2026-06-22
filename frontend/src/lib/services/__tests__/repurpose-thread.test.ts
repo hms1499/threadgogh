@@ -33,3 +33,16 @@ describe('repurpose-thread metadata + prompt', () => {
     expect(buildRepurposeSystem(8, 'vi')).toContain('Vietnamese');
   });
 });
+
+describe('buildRepurposeSystem outline', () => {
+  it('omits the outline instruction when none is given', () => {
+    expect(buildRepurposeSystem(8, 'en')).not.toContain('Follow this outline');
+  });
+
+  it('appends the outline points in order when given', () => {
+    const s = buildRepurposeSystem(8, 'en', ['First point', 'Second point']);
+    expect(s).toContain('Follow this outline');
+    expect(s).toContain('1. First point');
+    expect(s).toContain('2. Second point');
+  });
+});

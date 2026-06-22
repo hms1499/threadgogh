@@ -6,16 +6,24 @@ import type { ServiceDef, GenCtx, ValidateResult } from './types';
 
 export type RepurposeParams = { sourceText: string; tone: Tone; length: 5 | 8 | 12; language: LanguageCode };
 
-export function buildRepurposeSystem(length: number, language: LanguageCode): string {
-  return [
+export function buildRepurposeSystem(
+  length: number, language: LanguageCode, outline?: string[] | null,
+): string {
+  const parts = [
     'You are an expert X (Twitter) thread writer.',
     'You are given a long source text. Distill it into a thread that captures its key points.',
     'Return ONLY a JSON object of the form {"tweets": ["...", "..."]} — one string per tweet.',
     'No markdown fences, no commentary, no numbering prefixes.',
     'Tweet 1 must be a strong hook. The last tweet wraps up with a takeaway or CTA.',
     `Write about ${length} tweets. Each tweet must be under 270 characters.`,
-    languageInstruction(language),
-  ].join(' ');
+  ];
+  if (outline && outline.length) {
+    parts.push(
+      `Follow this outline, one tweet per point in order: ${outline.map((o, i) => `${i + 1}. ${o}`).join(' ')}.`,
+    );
+  }
+  parts.push(languageInstruction(language));
+  return parts.join(' ');
 }
 
 function validate(raw: unknown): ValidateResult<RepurposeParams> {
