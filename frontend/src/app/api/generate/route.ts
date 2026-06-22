@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
     const invoice = await createInvoice({
       serviceId: def.id, params: v.params as Record<string, unknown>,
-      priceStx: def.priceStx, priceSbtc: def.priceSbtc, previewHook,
+      priceStx: def.priceStx, priceSbtc: def.priceSbtc, previewHook, previewOutline,
     });
     return NextResponse.json({
       invoiceId: invoice.invoice_id,
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
   let thread: string[];
   try {
     const def = getService(invoice.service_id);
-    thread = await def.generate(invoice.params ?? {}, { previewHook: invoice.preview_hook ?? null, previewOutline: null });
+    thread = await def.generate(invoice.params ?? {}, { previewHook: invoice.preview_hook ?? null, previewOutline: invoice.preview_outline ?? null });
   } catch (e) {
     // LLM failed → release the lock so the user can retry for free (receipt stays on-chain).
     await releaseInvoice(invoice.invoice_id);

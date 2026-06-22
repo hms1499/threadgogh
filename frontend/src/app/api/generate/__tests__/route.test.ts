@@ -137,16 +137,30 @@ describe('POST /api/generate — quote (branch 1)', () => {
 
   it('still returns a 402 quote when the hook generation fails', async () => {
     m(generateHookAndOutline).mockRejectedValue(new Error('llm down'));
-    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: null }));
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: null, preview_outline: null }));
     const res = await POST(req({ service: 'x-thread', params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5 } }));
     expect(res.status).toBe(402);
     const json = await res.json();
     expect(json.invoiceId).toBe(INVOICE_ID);
     expect(json.previewHook ?? null).toBeNull();
+    expect(json.previewOutline ?? null).toBeNull();
     expect(invoices.createInvoice).toHaveBeenCalledWith(expect.objectContaining({
       serviceId: 'x-thread',
       params: { topic: 'bitcoin layer 2', tone: 'educational', length: 5, language: 'auto' },
       previewHook: null,
+      previewOutline: null,
+    }));
+  });
+
+  it('persists and returns previewOutline in the 402 body', async () => {
+    m(generateHookAndOutline).mockResolvedValue({ hook: 'a strong hook', outline: ['a', 'b', 'c', 'd', 'e'] });
+    m(invoices.createInvoice).mockResolvedValue(baseInvoice({ preview_hook: 'a strong hook', preview_outline: ['a', 'b', 'c', 'd', 'e'] }));
+    const res = await POST(req({ service: 'x-thread', params: { topic: 'AI', tone: 'educational', length: 5 } }));
+    expect(res.status).toBe(402);
+    const json = await res.json();
+    expect(json.previewOutline).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(invoices.createInvoice).toHaveBeenCalledWith(expect.objectContaining({
+      previewOutline: ['a', 'b', 'c', 'd', 'e'],
     }));
   });
 
@@ -339,7 +353,7 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
       regenerateOne: async () => 't',
     } as never);
 
-    m(invoices.getInvoice).mockResolvedValue(baseInvoice({ params: { topic: 'real' }, preview_hook: 'hook' }));
+    m(invoices.getInvoice).mockResolvedValue(baseInvoice({ params: { topic: 'real' }, preview_hook: 'hook', preview_outline: ['o1', 'o2'] }));
     m(invoices.isExpired).mockReturnValue(false);
     m(fetchReceipt).mockResolvedValue(stxReceipt);
     m(invoices.claimInvoice).mockResolvedValue(true);
@@ -349,7 +363,7 @@ describe('POST /api/generate — verify + generate (branch 2)', () => {
     const res = await POST(req({ invoiceId: INVOICE_ID, txId: '0xabc', params: { topic: 'HACKED' } }));
     expect(res.status).toBe(200);
     expect(seen[0].params).toEqual({ topic: 'real' });   // from invoice, not 'HACKED'
-    expect(seen[0].ctx).toEqual({ previewHook: 'hook', previewOutline: null });
+    expect(seen[0].ctx).toEqual({ previewHook: 'hook', previewOutline: ['o1', 'o2'] });
   });
 
   it('LLM fails after claim -> releases invoice for free retry, returns 500', async () => {
