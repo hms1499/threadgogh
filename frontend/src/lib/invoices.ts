@@ -15,6 +15,7 @@ export type Invoice = {
   expires_at: string;
   generating_at?: string | null;
   preview_hook?: string | null;
+  preview_outline?: string[] | null;
   language?: string | null;
 };
 
@@ -36,6 +37,7 @@ export async function createInvoice(args: {
   priceStx: number;
   priceSbtc: number;
   previewHook?: string | null;
+  previewOutline?: string[] | null;
 }): Promise<Invoice> {
   const invoice: Invoice = {
     invoice_id: crypto.randomBytes(32).toString('hex'),
@@ -46,6 +48,7 @@ export async function createInvoice(args: {
     status: 'pending',
     expires_at: new Date(Date.now() + INVOICE_TTL_MINUTES * 60_000).toISOString(),
     preview_hook: args.previewHook ?? null,
+    preview_outline: args.previewOutline ?? null,
   };
   const { error } = await supabase.from('invoices').insert(invoice);
   if (error) throw new Error(`createInvoice: ${error.message}`);
