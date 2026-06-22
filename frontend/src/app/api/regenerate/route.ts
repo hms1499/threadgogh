@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     } else {
       try {
         const def = getService(invoice.service_id);
-        thread = await def.generate(invoice.params ?? {}, { previewHook: null });
+        thread = await def.generate(invoice.params ?? {}, { previewHook: null, previewOutline: null });
       } catch (e) {
         const message = e instanceof Error ? e.message : 'generation failed';
         return NextResponse.json({ error: `re-roll failed: ${message}` }, { status: 500 });

@@ -1,6 +1,6 @@
 import { TONES, LENGTHS, LANGUAGE_CODES, PRICE_STX, PRICE_SBTC, type Tone, type LanguageCode } from '@/lib/config';
-import { generateThread, generateHook, regenerateTweet } from '@/lib/generate-thread';
-import type { ServiceDef, GenCtx, ValidateResult } from './types';
+import { generateThread, generateHookAndOutline, regenerateTweet } from '@/lib/generate-thread';
+import type { ServiceDef, GenCtx, ValidateResult, PreviewResult } from './types';
 
 export type XThreadParams = { topic: string; tone: Tone; length: 5 | 8 | 12; language: LanguageCode };
 
@@ -35,8 +35,12 @@ export const xThreadService: ServiceDef<XThreadParams> = {
         { value: 'es', label: 'Español' }, { value: 'fr', label: 'Français' }, { value: 'ja', label: '日本語' }, { value: 'zh', label: '中文' }] },
   ],
   validate,
-  generatePreview: (p) => generateHook(p.topic, p.tone, p.language),
+  generatePreview: async (p): Promise<PreviewResult> => {
+    const r = await generateHookAndOutline(p.topic, p.tone, p.length, p.language);
+    return { hook: r.hook, outline: r.outline };
+  },
   generate: (p, ctx: GenCtx) =>
-    generateThread(p.topic, p.tone, p.length, { firstTweet: ctx.previewHook, language: p.language }),
+    generateThread(p.topic, p.tone, p.length,
+      { firstTweet: ctx.previewHook, language: p.language, outline: ctx.previewOutline }),
   regenerateOne: (p, thread, i) => regenerateTweet(p.topic, p.tone, thread, i, { language: p.language }),
 };

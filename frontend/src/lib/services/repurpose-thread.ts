@@ -1,8 +1,8 @@
 import { TONES, LENGTHS, LANGUAGE_CODES, PRICE_STX, PRICE_SBTC, type Tone, type LanguageCode } from '@/lib/config';
 import {
-  resolveLlmConfig, assertApiKey, callLlm, parseThreadJson, parseHook, languageInstruction, TONE_GUIDE,
+  resolveLlmConfig, assertApiKey, callLlm, parseThreadJson, parseHook, parseHookAndOutline, languageInstruction, TONE_GUIDE,
 } from '@/lib/generate-thread';
-import type { ServiceDef, GenCtx, ValidateResult } from './types';
+import type { ServiceDef, GenCtx, ValidateResult, PreviewResult } from './types';
 
 export type RepurposeParams = { sourceText: string; tone: Tone; length: 5 | 8 | 12; language: LanguageCode };
 
@@ -45,22 +45,29 @@ async function generate(p: RepurposeParams, ctx: GenCtx): Promise<string[]> {
   assertApiKey(config);
   const head = ctx.previewHook && ctx.previewHook.trim() !== '' ? [ctx.previewHook] : [];
   const want = head.length ? p.length - 1 : p.length;
-  const system = buildRepurposeSystem(want, p.language);
+  const restOutline = ctx.previewOutline ? ctx.previewOutline.slice(head.length) : null;
+  const system = buildRepurposeSystem(want, p.language, restOutline);
   const user = `Source text:\n${p.sourceText}\nStyle: ${TONE_GUIDE[p.tone]}`;
   const rest = parseThreadJson(await callLlm(config, system, user));
   return [...head, ...rest].slice(0, p.length);
 }
 
-async function generatePreview(p: RepurposeParams): Promise<string | null> {
+async function generatePreview(p: RepurposeParams): Promise<PreviewResult> {
   const config = resolveLlmConfig(process.env);
   assertApiKey(config);
   const system = [
     'You are an expert X (Twitter) thread writer.',
-    'Read the source text and return ONLY {"tweet": "..."} — a single scroll-stopping hook tweet for a thread that summarizes it.',
-    'Under 270 characters. No fences, no commentary.',
+    `Read the source text and return ONLY {"hook":"...","outline":["...","..."]} for a ${p.length}-tweet thread that distills it.`,
+    'hook is the opening tweet, under 270 characters.',
+    `outline has ${p.length} short titles (max 8 words each), one per tweet in order; outline[0] summarizes the hook.`,
+    'No fences, no commentary.',
     languageInstruction(p.language),
   ].join(' ');
-  return parseHook(await callLlm(config, system, `Source text:\n${p.sourceText}\nStyle: ${TONE_GUIDE[p.tone]}`));
+  const r = parseHookAndOutline(
+    await callLlm(config, system, `Source text:\n${p.sourceText}\nStyle: ${TONE_GUIDE[p.tone]}`),
+    p.length,
+  );
+  return { hook: r.hook, outline: r.outline };
 }
 
 async function regenerateOne(p: RepurposeParams, thread: string[], i: number): Promise<string> {

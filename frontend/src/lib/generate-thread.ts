@@ -304,6 +304,25 @@ export async function generateHook(topic: string, tone: Tone, language?: string 
   return parseHook(raw);
 }
 
+// One LLM call producing the opening hook plus a short outline (one title per
+// tweet). Used at quote time to power the pre-payment preview.
+export async function generateHookAndOutline(
+  topic: string, tone: Tone, length: number, language?: string | null,
+): Promise<{ hook: string; outline: string[] }> {
+  const config = resolveLlmConfig(process.env);
+  assertApiKey(config);
+  const system = [
+    'You are an expert X (Twitter) thread writer.',
+    `Return ONLY a JSON object of the form {"hook": "...", "outline": ["...", "..."]} for a ${length}-tweet thread.`,
+    'hook is the opening tweet — under 270 characters, scroll-stopping.',
+    `outline has ${length} short titles (max 8 words each), one per tweet in order; outline[0] summarizes the hook.`,
+    'No markdown fences, no commentary, no numbering prefixes.',
+    languageInstruction(language),
+  ].join(' ');
+  const user = `Topic: ${topic}\nStyle: ${TONE_GUIDE[tone]}`;
+  return parseHookAndOutline(await callLlm(config, system, user), length);
+}
+
 // Rewrite a SINGLE tweet in place, given the whole thread for context. Returns the
 // one replacement tweet (parseHook caps it at 280); the caller splices it back in.
 export async function regenerateTweet(

@@ -2,7 +2,7 @@ import { TONES, LANGUAGE_CODES, PRICE_STX, PRICE_SBTC, type Tone, type LanguageC
 import {
   resolveLlmConfig, assertApiKey, callLlm, parseThreadJson, parseHook, languageInstruction, TONE_GUIDE,
 } from '@/lib/generate-thread';
-import type { ServiceDef, GenCtx, ValidateResult } from './types';
+import type { ServiceDef, GenCtx, ValidateResult, PreviewResult } from './types';
 
 export type HotTakesParams = { topic: string; tone: Tone; count: 3 | 5 | 8; language: LanguageCode };
 const COUNTS = [3, 5, 8] as const;
@@ -40,7 +40,7 @@ async function generate(p: HotTakesParams, ctx: GenCtx): Promise<string[]> {
   return [...head, ...rest].slice(0, p.count);
 }
 
-async function generatePreview(p: HotTakesParams): Promise<string | null> {
+async function generatePreview(p: HotTakesParams): Promise<PreviewResult> {
   const config = resolveLlmConfig(process.env);
   assertApiKey(config);
   const system = [
@@ -48,7 +48,8 @@ async function generatePreview(p: HotTakesParams): Promise<string | null> {
     'Return ONLY {"tweet": "..."} — a single standalone hot take on the topic. Under 270 characters. No fences.',
     languageInstruction(p.language),
   ].join(' ');
-  return parseHook(await callLlm(config, system, `Topic: ${p.topic}\nStyle: ${TONE_GUIDE[p.tone]}`));
+  const hook = parseHook(await callLlm(config, system, `Topic: ${p.topic}\nStyle: ${TONE_GUIDE[p.tone]}`));
+  return { hook, outline: null };
 }
 
 async function regenerateOne(p: HotTakesParams, thread: string[], i: number): Promise<string> {

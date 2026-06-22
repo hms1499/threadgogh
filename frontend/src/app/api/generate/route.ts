@@ -51,10 +51,13 @@ export async function POST(req: NextRequest) {
         { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
       );
     }
-    // Generate the free preview hook. If it fails, degrade gracefully: still quote.
+    // Generate the free preview hook+outline. If it fails, degrade gracefully: still quote.
     let previewHook: string | null = null;
+    let previewOutline: string[] | null = null;
     try {
-      previewHook = await def.generatePreview(v.params);
+      const preview = await def.generatePreview(v.params);
+      previewHook = preview.hook;
+      previewOutline = preview.outline;
     } catch (e) {
       log.warn('generate.preview_hook_failed', { err: e });
     }
@@ -71,6 +74,7 @@ export async function POST(req: NextRequest) {
       sbtcContract: SBTC_CONTRACT,
       expiresAt: invoice.expires_at,
       previewHook,
+      previewOutline,
     }, { status: 402 });
   }
 
@@ -132,7 +136,7 @@ export async function POST(req: NextRequest) {
   let thread: string[];
   try {
     const def = getService(invoice.service_id);
-    thread = await def.generate(invoice.params ?? {}, { previewHook: invoice.preview_hook ?? null });
+    thread = await def.generate(invoice.params ?? {}, { previewHook: invoice.preview_hook ?? null, previewOutline: null });
   } catch (e) {
     // LLM failed → release the lock so the user can retry for free (receipt stays on-chain).
     await releaseInvoice(invoice.invoice_id);

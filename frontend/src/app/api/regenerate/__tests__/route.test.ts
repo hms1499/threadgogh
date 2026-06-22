@@ -137,7 +137,7 @@ describe('POST /api/regenerate', () => {
     const json = await res.json();
     expect(json.thread).toEqual(['new1', 'new2']);
     expect(json.regenRemaining).toBe(2); // 3 - 1
-    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { firstTweet: null, language: 'auto' });
+    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { firstTweet: null, language: 'auto', outline: null });
     expect(invoices.regenerateGeneration).toHaveBeenCalledWith(INVOICE_ID, ['new1', 'new2'], 0);
   });
 
@@ -149,7 +149,7 @@ describe('POST /api/regenerate', () => {
     m(generateThread).mockResolvedValue(['moi1', 'moi2']);
     m(invoices.regenerateGeneration).mockResolvedValue(gen({ thread_content: ['moi1', 'moi2'], regen_count: 1 }));
     await POST(req({ invoiceId: INVOICE_ID }));
-    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { firstTweet: null, language: 'vi' });
+    expect(generateThread).toHaveBeenCalledWith('bitcoin layer 2', 'educational', 5, { firstTweet: null, language: 'vi', outline: null });
   });
 
   it('per-tweet re-roll: rewrites only the targeted tweet, keeps the rest', async () => {
