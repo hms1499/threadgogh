@@ -206,7 +206,10 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service: values.service, params: values.params }),
       });
-      if (quoteRes.status !== 402) throw new Error('Could not get a quote');
+      if (quoteRes.status !== 402) {
+        const e = await quoteRes.json().catch(() => ({}));
+        throw new Error(e.error ?? `Could not get a quote (${quoteRes.status})`);
+      }
       const quote: Quote = await quoteRes.json();
       setPreviewHook(quote.previewHook ?? null);
 
