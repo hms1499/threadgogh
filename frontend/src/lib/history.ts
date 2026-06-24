@@ -35,13 +35,13 @@ type RawRow = {
   invoices: InvoiceRel | InvoiceRel[] | null;
 };
 
-type InvoiceRel = { topic?: string | null; params?: Record<string, unknown> | null };
+export type InvoiceRel = { topic?: string | null; params?: Record<string, unknown> | null };
 
 // A display label for the history row. New invoices store inputs in `params` (the
 // `topic` column is null for them); rows predating migration 0006 only have the
 // legacy column. Prefer params (topic, else the repurpose-thread source text), then
 // fall back to the legacy column.
-function displayTopic(rel: InvoiceRel | undefined): string | null {
+export function displayTopic(rel: InvoiceRel | undefined): string | null {
   const p = rel?.params;
   if (p) {
     if (typeof p.topic === 'string' && p.topic) return p.topic;

@@ -97,6 +97,7 @@ export type Generation = {
   tx_id: string;
   thread_content: string[];
   regen_count?: number;
+  share_slug?: string | null;
 };
 
 export async function getGeneration(invoiceId: string): Promise<Generation | null> {
