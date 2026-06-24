@@ -29,7 +29,7 @@ const serviceLabel = (id: string) => SERVICE_LABELS[id] ?? 'X Thread';
 
 export function HistoryPanel({ address, onSelect }: {
   address: string | null;
-  onSelect: (thread: string[]) => void;
+  onSelect: (thread: string[], invoiceId: string) => void;
 }) {
   const { message: msg } = App.useApp();
   const [items, setItems] = useState<Item[] | null>(null); // null = not signed in yet
@@ -97,11 +97,11 @@ export function HistoryPanel({ address, onSelect }: {
               className="vg-history-item"
               role="button"
               tabIndex={0}
-              onClick={() => onSelect(it.thread_content)}
+              onClick={() => onSelect(it.thread_content, it.invoice_id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSelect(it.thread_content);
+                  onSelect(it.thread_content, it.invoice_id);
                 }
               }}
               style={{ cursor: 'pointer', padding: '10px 8px' }}

@@ -135,19 +135,24 @@ export default function Home() {
     }
   }
 
-  // Shared auth dance for both whole-thread and per-tweet re-rolls: try the session
-  // cookie first, only prompting the wallet to sign when there's no valid session,
-  // so repeat re-rolls don't re-prompt.
-  async function postRegenerate(payload: object) {
-    const call = (auth: object) => fetch('/api/regenerate', {
-      method: 'POST',
+  // Authenticated calls to the ownership-gated endpoints (re-roll, share, unshare).
+  // Try the session cookie first so repeat actions don't re-prompt. If the cookie is
+  // missing/expired (401) OR bound to a different address than the on-chain payer
+  // (403 — e.g. a stale session from another wallet account), prove the *connected*
+  // wallet with a fresh signature and retry once. A fresh signature outranks any
+  // cookie server-side, so this self-heals a wrong-account session and re-mints the
+  // cookie to the correct address. If it still 403s, the connected wallet genuinely
+  // isn't the payer — the caller surfaces that.
+  async function authedFetch(path: string, method: 'POST' | 'DELETE', payload: object) {
+    const call = (auth: object) => fetch(path, {
+      method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...payload, ...auth }),
     });
     let res = await call({});
-    if (res.status === 401) {
+    if (res.status === 401 || res.status === 403) {
       const addr = getAddress() ?? address;
-      if (!addr) throw new Error('Connect your wallet to re-roll.');
+      if (!addr) throw new Error('Connect your wallet first.');
       res = await call(await signInWithWallet(addr));
     }
     return res;
@@ -158,7 +163,8 @@ export default function Home() {
     setRegenerating(true);
     setError(undefined);
     try {
-      const res = await postRegenerate({ invoiceId: displayedInvoiceId });
+      const res = await authedFetch('/api/regenerate', 'POST', { invoiceId: displayedInvoiceId });
+      if (res.status === 403) throw new Error('This thread was paid by a different wallet. Switch to the paying account and try again.');
       if (res.status === 202) {
         message.info('A re-roll is already in progress — try again in a moment.');
         return;
@@ -174,27 +180,12 @@ export default function Home() {
     }
   }
 
-  // Same auth dance as re-roll: try the session cookie, sign only on 401.
-  async function postShare(payload: object) {
-    const call = (auth: object) => fetch('/api/share', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, ...auth }),
-    });
-    let res = await call({});
-    if (res.status === 401) {
-      const addr = getAddress() ?? address;
-      if (!addr) throw new Error('Connect your wallet to share.');
-      res = await call(await signInWithWallet(addr));
-    }
-    return res;
-  }
-
   async function shareThread() {
     if (!displayedInvoiceId) return;
     setSharing(true);
     try {
-      const res = await postShare({ invoiceId: displayedInvoiceId });
+      const res = await authedFetch('/api/share', 'POST', { invoiceId: displayedInvoiceId });
+      if (res.status === 403) throw new Error('This thread was paid by a different wallet. Switch to the paying account and try again.');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       setShareUrl(`${window.location.origin}/t/${data.slug}`);
@@ -205,27 +196,12 @@ export default function Home() {
     }
   }
 
-  // Same auth dance as postShare, but uses DELETE to revoke the public link.
-  async function postUnshare(payload: object) {
-    const call = (auth: object) => fetch('/api/share', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, ...auth }),
-    });
-    let res = await call({});
-    if (res.status === 401) {
-      const addr = getAddress() ?? address;
-      if (!addr) throw new Error('Connect your wallet to unshare.');
-      res = await call(await signInWithWallet(addr));
-    }
-    return res;
-  }
-
   async function unshareThread() {
     if (!displayedInvoiceId) return;
     setUnsharing(true);
     try {
-      const res = await postUnshare({ invoiceId: displayedInvoiceId });
+      const res = await authedFetch('/api/share', 'DELETE', { invoiceId: displayedInvoiceId });
+      if (res.status === 403) throw new Error('This thread was paid by a different wallet. Switch to the paying account and try again.');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       setShareUrl(null);
@@ -244,7 +220,8 @@ export default function Home() {
     setRerollingIndex(index);
     setError(undefined);
     try {
-      const res = await postRegenerate({ invoiceId: displayedInvoiceId, tweetIndex: index, thread });
+      const res = await authedFetch('/api/regenerate', 'POST', { invoiceId: displayedInvoiceId, tweetIndex: index, thread });
+      if (res.status === 403) throw new Error('This thread was paid by a different wallet. Switch to the paying account and try again.');
       if (res.status === 202) {
         message.info('A re-roll is already in progress — try again in a moment.');
         return;
@@ -414,15 +391,15 @@ export default function Home() {
       {/* ── Generated thread ── */}
       {thread.length > 0 && (
         <Flex ref={threadRef} vertical gap={12} style={{ marginTop: 32, scrollMarginTop: 24 }}>
-          <Flex justify="space-between" align="center" className="tp-rise">
+          <Flex justify="space-between" align="center" wrap gap={8} className="tp-rise">
             <Title
               level={4}
               className="tp-display"
-              style={{ margin: 0, color: 'var(--vg-star)', fontStyle: 'italic' }}
+              style={{ margin: 0, color: 'var(--vg-star)', fontStyle: 'italic', whiteSpace: 'nowrap', flex: '0 0 auto' }}
             >
               Your thread
             </Title>
-            <Flex gap={8} align="center">
+            <Flex gap={8} align="center" wrap justify="flex-end" style={{ flex: '1 1 auto', minWidth: 0 }}>
               <Button
                 type="text"
                 size="small"
@@ -477,7 +454,7 @@ export default function Home() {
                 total={thread.length}
                 onEdit={editable ? handleEditTweet : undefined}
                 onDelete={editable ? handleDeleteTweet : undefined}
-                onReroll={editable && displayedInvoiceId && regenRemaining !== 0 ? rerollTweet : undefined}
+                onReroll={editable && displayedInvoiceId && regenRemaining != null && regenRemaining !== 0 ? rerollTweet : undefined}
                 rerolling={rerollingIndex === i}
               />
             ))}
@@ -508,7 +485,7 @@ export default function Home() {
       >
         <HistoryPanel
           address={address}
-          onSelect={(t) => { setThread(t); setPhase('done'); setDisplayedInvoiceId(undefined); setRegenRemaining(null); setThreadChained(true); setHistoryOpen(false); }}
+          onSelect={(t, invoiceId) => { setThread(t); setPhase('done'); setDisplayedInvoiceId(invoiceId); setRegenRemaining(null); setThreadChained(true); setHistoryOpen(false); setShareUrl(null); }}
         />
       </Drawer>
 
