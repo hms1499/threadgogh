@@ -14,6 +14,7 @@ import { VanGoghCanvas } from '@/components/VanGoghCanvas';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { EmptyGallery } from '@/components/EmptyGallery';
 import { OutlinePreview } from '@/components/OutlinePreview';
+import { ShareButton } from '@/components/ShareButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, signInWithWallet, waitForTx } from '@/lib/stacks';
 import { MAX_FREE_REGENS } from '@/lib/config';
@@ -50,6 +51,8 @@ export default function Home() {
   const [regenRemaining, setRegenRemaining] = useState<number | null>(null);
   const [regenerating, setRegenerating] = useState(false);
   const [rerollingIndex, setRerollingIndex] = useState<number | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
   function refreshStats() {
@@ -170,6 +173,37 @@ export default function Home() {
     }
   }
 
+  // Same auth dance as re-roll: try the session cookie, sign only on 401.
+  async function postShare(payload: object) {
+    const call = (auth: object) => fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, ...auth }),
+    });
+    let res = await call({});
+    if (res.status === 401) {
+      const addr = getAddress() ?? address;
+      if (!addr) throw new Error('Connect your wallet to share.');
+      res = await call(await signInWithWallet(addr));
+    }
+    return res;
+  }
+
+  async function shareThread() {
+    if (!displayedInvoiceId) return;
+    setSharing(true);
+    try {
+      const res = await postShare({ invoiceId: displayedInvoiceId });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      setShareUrl(`${window.location.origin}/t/${data.slug}`);
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : 'Share failed');
+    } finally {
+      setSharing(false);
+    }
+  }
+
   // Re-roll a single tweet, keeping the rest. Sends the current thread as the base
   // so inline edits to other tweets survive; shares the free re-roll budget.
   async function rerollTweet(index: number) {
@@ -194,7 +228,7 @@ export default function Home() {
   }
 
   async function handleGenerate(values: FormValues) {
-    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null); setPreviewOutline(null); setPreviewPriceLabel(''); setDisplayedInvoiceId(undefined); setRegenRemaining(null);
+    setError(undefined); setThread([]); setTxid(undefined); setPendingInvoiceId(undefined); setPreviewHook(null); setPreviewOutline(null); setPreviewPriceLabel(''); setDisplayedInvoiceId(undefined); setRegenRemaining(null); setShareUrl(null);
     // Pin the chained-ness of the service we're generating with, so post-to-X
     // numbering matches the result once it lands.
     setThreadChained(services.find((s) => s.id === values.service)?.chained ?? true);
@@ -391,6 +425,13 @@ export default function Home() {
               >
                 {copiedAll ? 'Copied' : 'Copy all'}
               </Button>
+              <ShareButton
+                shared={!!shareUrl}
+                sharing={sharing}
+                shareUrl={shareUrl}
+                onShare={shareThread}
+                onCopy={() => { if (shareUrl) navigator.clipboard.writeText(shareUrl); }}
+              />
             </Flex>
           </Flex>
           {thread.map((t, i) => (
