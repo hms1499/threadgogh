@@ -2,7 +2,7 @@
 
 import { Steps, Alert, Typography, Flex } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
-import { STACKS_NETWORK } from '@/lib/config';
+import { explorerTxUrl } from '@/lib/config';
 import { VanGoghLoader } from './VanGoghLoader';
 
 const LOADER_LABEL: Partial<Record<Phase, string>> = {
@@ -63,7 +63,7 @@ export function PaymentStatus({ phase, txid, error }: {
         {txid && (
           <Typography.Link
             className="tp-mono"
-            href={`https://explorer.hiro.so/txid/${txid}?chain=${STACKS_NETWORK}`}
+            href={explorerTxUrl(txid)}
             target="_blank"
             rel="noreferrer"
             style={{ fontSize: 12, color: 'var(--vg-muted)' }}

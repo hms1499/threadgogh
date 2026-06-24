@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { Typography } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
-import { STACKS_NETWORK } from '@/lib/config';
+import { explorerTxUrl } from '@/lib/config';
 
 const { Text } = Typography;
 
@@ -50,7 +50,7 @@ export function VanGoghCanvas({ label, tx, fadingOut }: {
       {tx && (
         <Typography.Link
           className="tp-mono"
-          href={`https://explorer.hiro.so/txid/${tx}?chain=${STACKS_NETWORK}`}
+          href={explorerTxUrl(tx)}
           target="_blank"
           rel="noreferrer"
           style={{ fontSize: 12, color: 'var(--vg-muted)' }}

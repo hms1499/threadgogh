@@ -23,6 +23,12 @@ if (RAW_NETWORK !== 'mainnet' && RAW_NETWORK !== 'testnet') {
 }
 export const STACKS_NETWORK: StacksNetwork = RAW_NETWORK;
 
+// Hiro explorer link for a transaction id, on the active network. Centralizes the
+// URL so the share page, payment status, and loader all stay in sync.
+export function explorerTxUrl(txId: string): string {
+  return `https://explorer.hiro.so/txid/${txId}?chain=${STACKS_NETWORK}`;
+}
+
 // Server-only
 export const PRICE_STX = Number(process.env.PRICE_STX ?? 100000);
 export const PRICE_SBTC = Number(process.env.PRICE_SBTC ?? 100);
