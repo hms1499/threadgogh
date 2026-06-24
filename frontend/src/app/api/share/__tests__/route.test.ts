@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/invoices', () => ({ getGeneration: vi.fn() }));
 vi.mock('@/lib/share', () => ({ mintShareSlug: vi.fn(), clearShareSlug: vi.fn() }));
-vi.mock('@/lib/auth', () => ({ verifyHistoryAuth: vi.fn() }));
 vi.mock('@/lib/session', () => ({
   SESSION_COOKIE: 'tg_session',
   verifySessionToken: vi.fn(),
@@ -13,7 +12,6 @@ vi.mock('@/lib/session', () => ({
 import { POST, DELETE } from '../route';
 import * as invoices from '@/lib/invoices';
 import * as share from '@/lib/share';
-import { verifyHistoryAuth } from '@/lib/auth';
 import { verifySessionToken } from '@/lib/session';
 
 const m = vi.mocked;

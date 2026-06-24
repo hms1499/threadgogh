@@ -1,16 +1,17 @@
 'use client';
 
 import { Button, Flex, Typography, App } from 'antd';
-import { ShareAltOutlined, LinkOutlined } from '@ant-design/icons';
+import { ShareAltOutlined, LinkOutlined, StopOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
 // Presentational only — the share network call + wallet signing live in page.tsx
 // (where the auth dance already exists). Before share: a "Share" button. After:
-// the public link with a copy affordance.
-export function ShareButton({ shared, sharing, shareUrl, onShare, onCopy }: {
+// the public link with a copy affordance + an "Unshare" button to revoke.
+export function ShareButton({ shared, sharing, shareUrl, onShare, onCopy, unsharing, onUnshare }: {
   shared: boolean; sharing: boolean; shareUrl: string | null;
   onShare: () => void; onCopy: () => void;
+  unsharing: boolean; onUnshare: () => void;
 }) {
   const { message } = App.useApp();
   if (shared && shareUrl) {
@@ -23,6 +24,15 @@ export function ShareButton({ shared, sharing, shareUrl, onShare, onCopy }: {
           onClick={() => { onCopy(); message.success('Share link copied'); }}
         >
           Copy link
+        </Button>
+        <Button
+          size="small"
+          icon={<StopOutlined />}
+          loading={unsharing}
+          onClick={onUnshare}
+          danger
+        >
+          Unshare
         </Button>
       </Flex>
     );

@@ -53,6 +53,7 @@ export default function Home() {
   const [rerollingIndex, setRerollingIndex] = useState<number | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [unsharing, setUnsharing] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
   function refreshStats() {
@@ -201,6 +202,38 @@ export default function Home() {
       message.error(e instanceof Error ? e.message : 'Share failed');
     } finally {
       setSharing(false);
+    }
+  }
+
+  // Same auth dance as postShare, but uses DELETE to revoke the public link.
+  async function postUnshare(payload: object) {
+    const call = (auth: object) => fetch('/api/share', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, ...auth }),
+    });
+    let res = await call({});
+    if (res.status === 401) {
+      const addr = getAddress() ?? address;
+      if (!addr) throw new Error('Connect your wallet to unshare.');
+      res = await call(await signInWithWallet(addr));
+    }
+    return res;
+  }
+
+  async function unshareThread() {
+    if (!displayedInvoiceId) return;
+    setUnsharing(true);
+    try {
+      const res = await postUnshare({ invoiceId: displayedInvoiceId });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      setShareUrl(null);
+      message.success('Unshared');
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : 'Unshare failed');
+    } finally {
+      setUnsharing(false);
     }
   }
 
@@ -431,6 +464,8 @@ export default function Home() {
                 shareUrl={shareUrl}
                 onShare={shareThread}
                 onCopy={() => { if (shareUrl) navigator.clipboard.writeText(shareUrl); }}
+                unsharing={unsharing}
+                onUnshare={unshareThread}
               />
             </Flex>
           </Flex>
