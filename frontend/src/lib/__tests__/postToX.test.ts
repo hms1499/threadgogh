@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { withThreadNumbers, intentUrl } from '../postToX';
+import { withThreadNumbers, intentUrl, creditUrl, creditTweet } from '../postToX';
+import { APP_DOMAIN } from '../config';
 
 describe('withThreadNumbers', () => {
   it('appends an i/n marker to every tweet in a multi-tweet thread', () => {
@@ -62,5 +63,29 @@ describe('withThreadNumbers chained flag', () => {
   });
   it('does not number when chained=false', () => {
     expect(withThreadNumbers(['a', 'b'], false)).toEqual(['a', 'b']);
+  });
+});
+
+describe('creditUrl', () => {
+  it('deep-links to the thread when given a slug', () => {
+    expect(creditUrl('abc123')).toBe(`https://${APP_DOMAIN}/t/abc123`);
+  });
+
+  it('falls back to the homepage with no slug', () => {
+    expect(creditUrl()).toBe(`https://${APP_DOMAIN}`);
+  });
+
+  it('falls back to the homepage for null/empty slug', () => {
+    expect(creditUrl(null)).toBe(`https://${APP_DOMAIN}`);
+    expect(creditUrl('')).toBe(`https://${APP_DOMAIN}`);
+  });
+});
+
+describe('creditTweet', () => {
+  it('embeds the url and stays under the 280-char tweet limit', () => {
+    const tweet = creditTweet(`https://${APP_DOMAIN}/t/abc123`);
+    expect(tweet).toContain(`https://${APP_DOMAIN}/t/abc123`);
+    expect(tweet).toContain('Made with ThreadGogh');
+    expect(tweet.length).toBeLessThan(280);
   });
 });
