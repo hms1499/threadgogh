@@ -41,7 +41,7 @@ export default async function PublicThreadPage({ params }: { params: Promise<{ s
           <Text type="secondary">{label}</Text>
           {thread.topic && <Title level={3} style={{ margin: 0 }}>{thread.topic}</Title>}
         </div>
-        <PublicThreadActions thread={tweets} chained={chained} />
+        <PublicThreadActions thread={tweets} chained={chained} slug={slug} />
       </Flex>
 
       <Paragraph type="secondary" style={{ margin: 0 }}>
