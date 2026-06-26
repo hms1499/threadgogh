@@ -36,8 +36,15 @@ export function creditUrl(slug?: string | null): string {
   return slug ? `${base}/t/${slug}` : base;
 }
 
+// Append the backlink-loop marker so a landing beacon can attribute the visit to a
+// posted/copied thread. Picks ? or & based on whether the url already has a query.
+export function withRef(url: string): string {
+  return url.includes('?') ? `${url}&ref=tg` : `${url}?ref=tg`;
+}
+
 // The standalone final "credit" tweet appended to a thread on copy/post. Kept a
-// separate tweet (never merged into paid content) and well under 280 chars.
+// separate tweet (never merged into paid content) and well under 280 chars. The
+// embedded url carries the ?ref=tg marker so landings can be measured.
 export function creditTweet(url: string): string {
-  return `🧵 Made with ThreadGogh — generate your own X thread, pay-per-thread on Stacks 👇 ${url}`;
+  return `🧵 Made with ThreadGogh — generate your own X thread, pay-per-thread on Stacks 👇 ${withRef(url)}`;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withThreadNumbers, intentUrl, creditUrl, creditTweet } from '../postToX';
+import { withThreadNumbers, intentUrl, creditUrl, creditTweet, withRef } from '../postToX';
 import { APP_DOMAIN } from '../config';
 
 describe('withThreadNumbers', () => {
@@ -86,6 +86,24 @@ describe('creditTweet', () => {
     const tweet = creditTweet(`https://${APP_DOMAIN}/t/abc123`);
     expect(tweet).toContain(`https://${APP_DOMAIN}/t/abc123`);
     expect(tweet).toContain('Made with ThreadGogh');
+    expect(tweet.length).toBeLessThan(280);
+  });
+});
+
+describe('withRef', () => {
+  it('appends ?ref=tg to a clean url', () => {
+    expect(withRef('https://x.test/t/abc')).toBe('https://x.test/t/abc?ref=tg');
+  });
+
+  it('appends &ref=tg when the url already has a query', () => {
+    expect(withRef('https://x.test/?a=1')).toBe('https://x.test/?a=1&ref=tg');
+  });
+});
+
+describe('creditTweet ref marker', () => {
+  it('embeds a ?ref=tg-tagged url', () => {
+    const tweet = creditTweet('https://x.test/t/abc');
+    expect(tweet).toContain('https://x.test/t/abc?ref=tg');
     expect(tweet.length).toBeLessThan(280);
   });
 });
