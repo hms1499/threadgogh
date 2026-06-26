@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Button, Typography, Flex, Statistic, App, Drawer } from 'antd';
+import { Button, Checkbox, Typography, Flex, Statistic, App, Drawer } from 'antd';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { WalletOutlined, CopyOutlined, CheckOutlined, HistoryOutlined, TwitterOutlined } from '@ant-design/icons';
 import { ThreadForm, type FormValues } from '@/components/ThreadForm';
@@ -19,6 +19,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { connectWallet, disconnectWallet, getAddress, payInvoice, signInWithWallet, waitForTx } from '@/lib/stacks';
 import { MAX_FREE_REGENS } from '@/lib/config';
 import { applyEdit, deleteTweet } from '@/lib/editThread';
+import { creditUrl, creditTweet } from '@/lib/postToX';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -46,6 +47,7 @@ export default function Home() {
   const [previewPriceLabel, setPreviewPriceLabel] = useState<string>('');
   const [copiedAll, setCopiedAll] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
+  const [includeCredit, setIncludeCredit] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [displayedInvoiceId, setDisplayedInvoiceId] = useState<string>();
   const [regenRemaining, setRegenRemaining] = useState<number | null>(null);
@@ -289,6 +291,7 @@ export default function Home() {
 
   const busy = !['idle', 'done', 'error', 'recover'].includes(phase);
   const editable = phase === 'done' && !regenerating;
+  const credit = includeCredit ? creditTweet(shareUrl || creditUrl()) : null;
 
   async function toggleWallet() {
     if (address) {
@@ -400,6 +403,13 @@ export default function Home() {
               Your thread
             </Title>
             <Flex gap={8} align="center" wrap justify="flex-end" style={{ flex: '1 1 auto', minWidth: 0 }}>
+              <Checkbox
+                checked={includeCredit}
+                onChange={(e) => setIncludeCredit(e.target.checked)}
+                style={{ color: 'var(--vg-muted)' }}
+              >
+                Add ThreadGogh link
+              </Checkbox>
               <Button
                 type="text"
                 size="small"
@@ -427,7 +437,7 @@ export default function Home() {
                 icon={copiedAll ? <CheckOutlined /> : <CopyOutlined />}
                 style={{ color: copiedAll ? 'var(--vg-success)' : 'var(--vg-muted)' }}
                 onClick={() => {
-                  navigator.clipboard.writeText(thread.join('\n\n'));
+                  navigator.clipboard.writeText(credit ? `${thread.join('\n\n')}\n\n${credit}` : thread.join('\n\n'));
                   message.success('Whole thread copied');
                   setCopiedAll(true);
                   setTimeout(() => setCopiedAll(false), 1400);
@@ -465,7 +475,7 @@ export default function Home() {
       {thread.length === 0 && phase === 'idle' && <EmptyGallery />}
 
       {/* ── Post the whole thread to X, one tweet at a time ── */}
-      <PostThreadModal thread={thread} chained={threadChained} open={postOpen} onClose={() => setPostOpen(false)} />
+      <PostThreadModal thread={thread} chained={threadChained} credit={credit} open={postOpen} onClose={() => setPostOpen(false)} />
 
       {/* ── History — opened from the hero, not inline ── */}
       <Drawer
