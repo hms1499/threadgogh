@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Playfair_Display, Sora, JetBrains_Mono } from 'next/font/google';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { Providers } from './providers';
+import { BacklinkTracker } from '@/components/BacklinkTracker';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import './globals.css';
 
@@ -49,6 +50,7 @@ export default function RootLayout({
               "(function(){try{var s=localStorage.getItem('tg-theme');var m=(s==='light'||s==='dark')?s:'dark';var e=document.documentElement;e.dataset.theme=m;e.style.colorScheme=m;}catch(_){}})();",
           }}
         />
+        <BacklinkTracker />
         <ThemeProvider>
           <AntdRegistry>
             <Providers>{children}</Providers>
