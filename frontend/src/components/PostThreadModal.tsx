@@ -9,12 +9,16 @@ const { Paragraph, Text } = Typography;
 
 // Guided "post the whole thread to X" flow. The X compose-intent can't pre-link a
 // reply, so we walk the user one tweet at a time (numbered i/n) and tell them to
-// reply each new tweet to the previous one to build the chain.
-export function PostThreadModal({ thread, chained = true, open, onClose }: {
-  thread: string[]; chained?: boolean; open: boolean; onClose: () => void;
+// reply each new tweet to the previous one to build the chain. When `credit` is
+// set, it's appended as one extra, unnumbered final step (a standalone reply) so
+// the real thread's i/n count stays honest.
+export function PostThreadModal({ thread, chained = true, credit = null, open, onClose }: {
+  thread: string[]; chained?: boolean; credit?: string | null; open: boolean; onClose: () => void;
 }) {
   const numbered = withThreadNumbers(thread, chained);
   const n = numbered.length;
+  const steps = credit ? [...numbered, credit] : numbered;
+  const creditStep = credit ? steps.length - 1 : -1;
   const [step, setStep] = useState(0);
   const [openedCurrent, setOpenedCurrent] = useState(false);
 
@@ -26,16 +30,17 @@ export function PostThreadModal({ thread, chained = true, open, onClose }: {
     setOpenedCurrent(false);
   }, [open]);
 
-  const current = numbered[step] ?? '';
+  const current = steps[step] ?? '';
+  const onCredit = step === creditStep;
   const over = current.length > 280;
-  const isLast = step === n - 1;
+  const isLast = step === steps.length - 1;
 
   function openCurrent() {
     window.open(intentUrl(current), '_blank', 'noopener,noreferrer');
     setOpenedCurrent(true);
   }
   function go(delta: number) {
-    setStep((s) => Math.min(n - 1, Math.max(0, s + delta)));
+    setStep((s) => Math.min(steps.length - 1, Math.max(0, s + delta)));
     setOpenedCurrent(false);
   }
 
@@ -53,7 +58,7 @@ export function PostThreadModal({ thread, chained = true, open, onClose }: {
       </Text>
 
       <Flex justify="space-between" align="center" style={{ marginBottom: 6 }}>
-        <Text className="vg-plate">Tweet {step + 1} / {n}</Text>
+        <Text className="vg-plate">{onCredit ? 'ThreadGogh link — optional' : `Tweet ${step + 1} / ${n}`}</Text>
         <Text
           className="tp-mono"
           style={{ fontSize: 11, color: over ? 'var(--vg-error)' : 'var(--vg-faint)' }}
@@ -84,7 +89,9 @@ export function PostThreadModal({ thread, chained = true, open, onClose }: {
         onClick={openCurrent}
         style={{ marginBottom: 12 }}
       >
-        {openedCurrent ? 'Opened — reopen on X' : `Open tweet ${step + 1} on X`}
+        {openedCurrent
+          ? 'Opened — reopen on X'
+          : onCredit ? 'Open ThreadGogh link on X' : `Open tweet ${step + 1} on X`}
       </Button>
 
       <Flex justify="space-between" align="center">
