@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
       max: RATE_LIMIT_TRACK_MAX, windowSec: RATE_LIMIT_TRACK_WINDOW_SEC,
     });
     if (rl.allowed) {
-      const body = JSON.parse(await req.text());
+      let body: { event?: unknown; variant?: unknown };
+      try {
+        body = JSON.parse(await req.text());
+      } catch {
+        return new NextResponse(null, { status: 204 });
+      }
       const event = typeof body?.event === 'string' ? body.event : '';
       const variant = typeof body?.variant === 'string' ? body.variant : '';
       await recordEvent(event, variant);

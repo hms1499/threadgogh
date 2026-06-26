@@ -17,7 +17,7 @@ export function BacklinkTracker() {
     if (typeof navigator.sendBeacon === 'function') {
       navigator.sendBeacon('/api/track', new Blob([body], { type: 'application/json' }));
     } else {
-      void fetch('/api/track', { method: 'POST', body, keepalive: true });
+      void fetch('/api/track', { method: 'POST', body, keepalive: true }).catch(() => {});
     }
   }, []);
   return null;
