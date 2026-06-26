@@ -65,5 +65,6 @@ editor (no automated runner). Current:
 - `0001_invoices_generating_at.sql` — adds the nullable `generating_at` column.
 - `0002_invoices_preview_hook.sql` — adds the nullable `preview_hook` column.
 - `0003_generations_regen_count.sql` — adds `regen_count` (default 0).
+- `0010_events.sql` — append-only `events(event, variant, created_at)` for backlink landing instrumentation; RLS-locked (service-role only).
 
 When you change a table, add a numbered migration file here and note it in this doc.
